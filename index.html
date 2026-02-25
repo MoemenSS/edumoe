@@ -1,0 +1,1245 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+
+  <!-- EDIT: Change page title -->
+  <title>EDUMOE · CS Learning Platform</title>
+
+  <!-- Supabase -->
+  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+
+  <!-- Math.js for calculus solver -->
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/mathjs/12.4.2/math.min.js"></script>
+
+  <!-- Chart.js for graphs -->
+  <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.2/dist/chart.umd.min.js"></script>
+
+  <!-- Fonts -->
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800;900&display=swap" rel="stylesheet">
+
+  <!-- Icons -->
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+
+  <!-- EDUMOE styles -->
+  <link rel="stylesheet" href="style.css">
+
+  <!-- SVG filter for glass distortion effect -->
+  <svg style="position:absolute;width:0;height:0;overflow:hidden" aria-hidden="true">
+    <defs>
+      <filter id="glass-distort" x="-20%" y="-20%" width="140%" height="140%" color-interpolation-filters="sRGB">
+        <feTurbulence type="fractalNoise" baseFrequency="0.012 0.008" numOctaves="3" seed="2" result="noise"/>
+        <feDisplacementMap in="SourceGraphic" in2="noise" scale="10" xChannelSelector="R" yChannelSelector="G"/>
+      </filter>
+    </defs>
+  </svg>
+</head>
+<body>
+
+<!-- ─── BACKGROUND AMBIENT ORBS ─────────────────────────────── -->
+<div class="bg-canvas">
+  <div class="bg-orb bg-orb-1"></div>
+  <div class="bg-orb bg-orb-2"></div>
+  <div class="bg-orb bg-orb-3"></div>
+</div>
+
+<!-- ─── LOADER (full-screen intro animation) ─────────────────── -->
+<div id="loader">
+  <div class="loader-wordmark gradient-text">EDUMOE</div>
+  <div class="loader-progress"><div class="loader-bar"></div></div>
+</div>
+
+<!-- ═══════════════════════════════════════════════════════════
+     NAVIGATION BAR
+     ═══════════════════════════════════════════════════════════ -->
+<nav class="navbar lg lg-pill">
+  <div class="lg-effect"></div>
+  <div class="lg-tint"></div>
+  <div class="lg-shine"></div>
+
+  <!-- Logo — EDIT: change name/icon -->
+  <a class="nav-logo" href="#" onclick="goPage('home'); return false;">
+    <div class="nav-logo-mark"><i class="fas fa-graduation-cap"></i></div>
+    <span class="nav-logo-name">EDUMOE</span>
+  </a>
+
+  <!-- Main nav links -->
+  <div class="nav-links">
+    <button class="nav-btn-link active" onclick="goPage('home')">Home</button>
+    <button class="nav-btn-link" onclick="goPage('courses')">Courses</button>
+    <button class="nav-btn-link" onclick="goPage('simulators')">Simulators</button>
+    <button class="nav-btn-link" onclick="goPage('quiz')">Quiz</button>
+    <button class="nav-btn-link" onclick="goPage('flashcards')">Flashcards</button>
+    <button class="nav-btn-link" onclick="goPage('moeai')">MoeAI</button>
+    <button class="nav-btn-link" onclick="goPage('pricing')">Pricing</button>
+    <button class="nav-btn-link" onclick="goPage('about')">About</button>
+  </div>
+
+  <!-- Right side: theme switcher + auth buttons -->
+  <div class="nav-right">
+
+    <!-- Theme switcher: 5 color dots -->
+    <!-- dot IDs must match: td-ruby, td-lava, td-space, td-oxford, td-light -->
+    <div class="theme-switcher lg lg-pill">
+      <div class="lg-effect"></div><div class="lg-tint"></div><div class="lg-shine"></div>
+      <button class="theme-dot td-ruby   active" id="td-ruby"   onclick="setTheme('ruby',this)"   title="Ruby (Red)"></button>
+      <button class="theme-dot td-lava"          id="td-lava"   onclick="setTheme('lava',this)"   title="Lava (Orange)"></button>
+      <button class="theme-dot td-space"         id="td-space"  onclick="setTheme('space',this)"  title="Space (Purple)"></button>
+      <button class="theme-dot td-oxford"        id="td-oxford" onclick="setTheme('oxford',this)" title="Oxford (Cyan)"></button>
+      <button class="theme-dot td-light"         id="td-light"  onclick="setTheme('light',this)"  title="Light (White)"></button>
+    </div>
+
+    <!-- Log in button (glass pill) -->
+    <button class="nav-auth-btn lg lg-pill" id="loginNavBtn"
+            onclick="document.getElementById('loginModal').classList.add('open')">
+      <div class="lg-effect"></div><div class="lg-tint"></div><div class="lg-shine"></div>
+      <i class="fas fa-user" style="font-size:13px;"></i> Log in
+    </button>
+
+    <!-- Sign up button (filled gradient) — sits NEXT to log in, same row -->
+    <button class="nav-cta" id="signupNavBtn"
+            onclick="document.getElementById('signupModal').classList.add('open')">
+      Sign up
+    </button>
+  </div>
+</nav>
+
+
+<!-- ═══════════════════════════════════════════════════════════
+     PAGE: HOME
+     ═══════════════════════════════════════════════════════════ -->
+<div class="page active" id="page-home">
+  <div class="hero">
+
+    <!-- LEFT: Text content -->
+    <div>
+
+      <!-- Small eyebrow badge above title -->
+      <div class="section-label hero-eyebrow lg lg-pill" style="display:inline-flex; margin-bottom:24px;">
+        <div class="lg-effect"></div><div class="lg-tint"></div><div class="lg-shine"></div>
+        <div class="section-label-dot"></div>
+        <!-- EDIT: Change this short tagline -->
+        Free CS Education · Built in Egypt
+      </div>
+
+      <!-- Main hero title — each word animates in sequentially -->
+      <h1 class="sf-display hero-title">
+        <span class="overflow"><span class="w" style="--d:0.1s">Learn</span></span>
+        <span>&nbsp;</span>
+        <span class="overflow"><span class="w gradient-text" style="--d:0.2s">Computer</span></span>
+        <br>
+        <span class="overflow"><span class="w" style="--d:0.3s">Science</span></span>
+        <span>&nbsp;</span>
+        <span class="overflow"><span class="w" style="--d:0.4s">Through</span></span>
+        <br>
+        <span class="overflow"><span class="w gradient-text" style="--d:0.5s">Interactive</span></span>
+        <span>&nbsp;</span>
+        <span class="overflow"><span class="w gradient-text" style="--d:0.6s">Coding</span></span>
+      </h1>
+
+      <!-- Hero description — EDIT: write your own tagline -->
+      <p class="hero-desc">
+        <!-- EDIT: Your platform description goes here -->
+        A free, interactive CS platform for students across Egypt.
+        Real simulators, working compilers, and a study community.
+      </p>
+
+      <!-- CTA buttons -->
+      <div class="hero-ctas">
+        <button class="btn btn-fire" onclick="goPage('courses')">
+          <i class="fas fa-play"></i> Start Learning
+        </button>
+        <button class="btn lg lg-pill" onclick="goPage('simulators')" style="padding:12px 24px; border:1px solid var(--border2);">
+          <div class="lg-effect"></div><div class="lg-tint"></div><div class="lg-shine"></div>
+          <i class="fas fa-code"></i> Try Simulators
+        </button>
+        <!-- EDIT: Update your Telegram channel link -->
+        <a href="https://t.me/CS_Epic_Save" target="_blank"
+           class="btn lg lg-pill" style="padding:12px 24px; border:1px solid var(--border2); color:inherit; text-decoration:none;">
+          <div class="lg-effect"></div><div class="lg-tint"></div><div class="lg-shine"></div>
+          <i class="fab fa-telegram"></i> Telegram
+        </a>
+      </div>
+
+      <!-- Stats — EDIT: replace — with real numbers when you have them -->
+      <div class="hero-stats">
+        <div class="stat-card lg lg-card sr">
+          <div class="lg-effect"></div><div class="lg-tint"></div><div class="lg-shine"></div>
+          <!-- EDIT: Replace — with your student count when ready -->
+          <div class="stat-val" id="stat-students">—</div>
+          <div class="stat-lbl">Students</div>
+        </div>
+        <div class="stat-card lg lg-card sr sr-delay-1">
+          <div class="lg-effect"></div><div class="lg-tint"></div><div class="lg-shine"></div>
+          <!-- EDIT: Update when you add more courses -->
+          <div class="stat-val">4</div>
+          <div class="stat-lbl">Courses</div>
+        </div>
+        <div class="stat-card lg lg-card sr sr-delay-2">
+          <div class="lg-effect"></div><div class="lg-tint"></div><div class="lg-shine"></div>
+          <div class="stat-val">Free</div>
+          <div class="stat-lbl">Always</div>
+        </div>
+        <div class="stat-card lg lg-card sr sr-delay-3">
+          <div class="lg-effect"></div><div class="lg-tint"></div><div class="lg-shine"></div>
+          <div class="stat-val">🇪🇬</div>
+          <div class="stat-lbl">Egypt</div>
+        </div>
+      </div>
+    </div>
+
+    <!-- RIGHT: Hero visual (glass orb + floating windows) -->
+    <div class="hero-visual">
+      <div class="orbit-scene">
+
+        <!-- Central glass orb — ADD YOUR PHOTO by replacing the placeholder below -->
+        <div class="orb-shell">
+          <div class="orb-ring"></div>
+          <div class="orb-body">
+            <!--
+              TO ADD YOUR PHOTO: Delete the div below and replace with:
+              <img src="your-photo.jpg"
+                   style="width:100%;height:100%;object-fit:cover;display:block;">
+            -->
+            <div class="orb-placeholder"><i class="fas fa-user"></i></div>
+            <div class="orb-gloss"></div>
+          </div>
+          <div class="orb-particles">
+            <div class="orb-dot"></div>
+            <div class="orb-dot"></div>
+            <div class="orb-dot"></div>
+            <div class="orb-dot"></div>
+          </div>
+        </div>
+
+        <!-- ── FLOATING WINDOW: TOP-LEFT — ODE Math ── -->
+        <div class="float-win fw-top-left">
+          <div class="float-win-topbar">
+            <div class="cd cd-r"></div><div class="cd cd-y"></div><div class="cd cd-g"></div>
+            <span class="float-win-title">ode.math</span>
+            <span class="float-win-badge">ODE</span>
+          </div>
+          <div class="float-win-body">
+            <span style="color:#4b5263;">// 2nd order ODE</span><br>
+            <span style="color:#e5c07b;">y''</span> + <span style="color:#d19a66;">2</span><span style="color:#e5c07b;">y'</span> + <span style="color:#d19a66;">5</span>y = <span style="color:#d19a66;">0</span><br>
+            <span style="color:#4b5263;">// characteristic eq:</span><br>
+            r² + <span style="color:#d19a66;">2</span>r + <span style="color:#d19a66;">5</span> = <span style="color:#d19a66;">0</span><br>
+            r = <span style="color:#98c379;">−1 ± 2i</span><br>
+            <span style="color:#4b5263;">// general solution:</span><br>
+            y = e<span style="color:#61afef;">⁻ˣ</span>(<span style="color:#c678dd;">A·cos</span><span style="color:#d19a66;">2x</span> + <span style="color:#c678dd;">B·sin</span><span style="color:#d19a66;">2x</span>)
+          </div>
+        </div>
+
+        <!-- ── FLOATING WINDOW: TOP-RIGHT — C++ Code ── -->
+        <div class="float-win fw-top-right">
+          <div class="float-win-topbar">
+            <div class="cd cd-r"></div><div class="cd cd-y"></div><div class="cd cd-g"></div>
+            <span class="float-win-title">main.cpp</span>
+            <span class="float-win-badge">C++17</span>
+          </div>
+          <div class="float-win-body">
+            <span style="color:#c678dd;">#include</span> <span style="color:#98c379;">&lt;iostream&gt;</span><br>
+            <span style="color:#c678dd;">using namespace</span> <span style="color:#e5c07b;">std</span>;<br>
+            <br>
+            <span style="color:#61afef;">long long</span> <span style="color:#c678dd;">factorial</span>(<span style="color:#61afef;">int</span> n) {<br>
+            &nbsp;&nbsp;<span style="color:#c678dd;">if</span>(n &lt;= <span style="color:#d19a66;">1</span>) <span style="color:#c678dd;">return</span> <span style="color:#d19a66;">1</span>;<br>
+            &nbsp;&nbsp;<span style="color:#c678dd;">return</span> n * <span style="color:#c678dd;">factorial</span>(n-<span style="color:#d19a66;">1</span>);<br>
+            }
+          </div>
+        </div>
+
+        <!-- ── FLOATING WINDOW: BOTTOM-RIGHT — Normal Distribution ── -->
+        <div class="float-win fw-bot-right">
+          <div class="float-win-topbar">
+            <div class="cd cd-r"></div><div class="cd cd-y"></div><div class="cd cd-g"></div>
+            <span class="float-win-title">normal_dist.py</span>
+            <span class="float-win-badge">STATS</span>
+          </div>
+          <div class="float-win-body" style="padding:10px 12px 6px;">
+            <div class="fw-prob-title">NORMAL DISTRIBUTION μ=0 σ=1</div>
+            <div class="fw-bar-row">
+              <span class="fw-bar-lbl">-2σ</span>
+              <div class="fw-bar-track"><div class="fw-bar-fill" style="width:4.6%;"></div></div>
+              <span class="fw-bar-val">4.6%</span>
+            </div>
+            <div class="fw-bar-row">
+              <span class="fw-bar-lbl">-1σ</span>
+              <div class="fw-bar-track"><div class="fw-bar-fill" style="width:34%;"></div></div>
+              <span class="fw-bar-val">34%</span>
+            </div>
+            <div class="fw-bar-row">
+              <span class="fw-bar-lbl">μ</span>
+              <div class="fw-bar-track"><div class="fw-bar-fill" style="width:100%;"></div></div>
+              <span class="fw-bar-val">100%</span>
+            </div>
+            <div class="fw-bar-row">
+              <span class="fw-bar-lbl">+1σ</span>
+              <div class="fw-bar-track"><div class="fw-bar-fill" style="width:34%;"></div></div>
+              <span class="fw-bar-val">34%</span>
+            </div>
+            <div class="fw-bar-row">
+              <span class="fw-bar-lbl">+2σ</span>
+              <div class="fw-bar-track"><div class="fw-bar-fill" style="width:4.6%;"></div></div>
+              <span class="fw-bar-val">4.6%</span>
+            </div>
+          </div>
+        </div>
+
+        <!-- ── FLOATING WINDOW: BOTTOM-LEFT — Logic Circuit ── -->
+        <div class="float-win fw-bot-left">
+          <div class="float-win-topbar">
+            <div class="cd cd-r"></div><div class="cd cd-y"></div><div class="cd cd-g"></div>
+            <span class="float-win-title">half_adder.circ</span>
+            <span class="float-win-badge">LOGIC</span>
+          </div>
+          <!-- SVG logic circuit diagram -->
+          <svg class="fw-svg" viewBox="0 0 186 100" fill="none" xmlns="http://www.w3.org/2000/svg"
+               style="display:block;width:100%;padding:8px 12px 10px;">
+            <!-- Input labels -->
+            <text x="6" y="32"  font-size="9" fill="#61afef" font-family="monospace">A</text>
+            <text x="6" y="58"  font-size="9" fill="#61afef" font-family="monospace">B</text>
+            <!-- Input wires -->
+            <line x1="14" y1="30" x2="50" y2="30" stroke="#61afef" stroke-width="1.2"/>
+            <line x1="14" y1="56" x2="50" y2="56" stroke="#61afef" stroke-width="1.2"/>
+            <!-- XOR gate body -->
+            <path d="M50 20 Q65 30 50 40" stroke="#c678dd" stroke-width="1.4" fill="none"/>
+            <path d="M50 20 Q80 30 50 40" stroke="#c678dd" stroke-width="1.4" fill="none"/>
+            <path d="M50 45 Q65 56 50 67" stroke="#c678dd" stroke-width="1.4" fill="none"/>
+            <path d="M50 45 Q80 56 50 67" stroke="#c678dd" stroke-width="1.4" fill="none"/>
+            <!-- XOR label -->
+            <text x="60" y="47"  font-size="8" fill="#c678dd" font-family="monospace">XOR</text>
+            <!-- AND gate body -->
+            <rect x="95" y="38" width="28" height="24" rx="4" stroke="#e5c07b" stroke-width="1.4" fill="none"/>
+            <!-- AND label -->
+            <text x="99" y="53" font-size="8" fill="#e5c07b" font-family="monospace">AND</text>
+            <!-- Wires to AND -->
+            <line x1="80" y1="30" x2="95" y2="43" stroke="#61afef" stroke-width="1" stroke-dasharray="2,2"/>
+            <line x1="80" y1="56" x2="95" y2="57" stroke="#61afef" stroke-width="1" stroke-dasharray="2,2"/>
+            <!-- Output labels -->
+            <line x1="80"  y1="43" x2="140" y2="43" stroke="#98c379" stroke-width="1.2"/>
+            <line x1="123" y1="50" x2="140" y2="65" stroke="#98c379" stroke-width="1.2"/>
+            <text x="142" y="46" font-size="9" fill="#98c379" font-family="monospace">S</text>
+            <text x="142" y="68" font-size="9" fill="#98c379" font-family="monospace">C</text>
+          </svg>
+        </div>
+
+      </div><!-- end .orbit-scene -->
+    </div><!-- end .hero-visual -->
+  </div><!-- end .hero -->
+
+  <!-- ── FEATURES SECTION ────────────────────────────────────── -->
+  <div class="wrap section" style="padding-top:60px;">
+    <div class="section-head sr">
+      <div class="section-label" style="display:inline-flex;">
+        <div class="section-label-dot"></div>Why EDUMOE
+      </div>
+      <!-- EDIT: Section heading -->
+      <h2 class="sf-title">Built for CS Students</h2>
+      <!-- EDIT: Section subtitle -->
+      <p>Everything you need for your CS courses — no subscriptions, no fluff</p>
+    </div>
+    <div class="features-grid">
+
+      <div class="feature-card lg lg-card sr">
+        <div class="lg-effect"></div><div class="lg-tint"></div><div class="lg-shine"></div>
+        <div class="feature-icon"><i class="fas fa-terminal"></i></div>
+        <!-- EDIT: Feature title and description -->
+        <h3>Live C++ Compiler</h3>
+        <p>Write and run C++ code directly in your browser. No setup, no downloads, no waiting.</p>
+      </div>
+
+      <div class="feature-card lg lg-card sr sr-delay-1">
+        <div class="lg-effect"></div><div class="lg-tint"></div><div class="lg-shine"></div>
+        <div class="feature-icon"><i class="fas fa-flask"></i></div>
+        <h3>Physics Simulators</h3>
+        <p>PhET-powered interactive simulations for circuits, projectiles, and more.</p>
+      </div>
+
+      <div class="feature-card lg lg-card sr sr-delay-2">
+        <div class="lg-effect"></div><div class="lg-tint"></div><div class="lg-shine"></div>
+        <div class="feature-icon"><i class="fas fa-calculator"></i></div>
+        <h3>Math Solver</h3>
+        <p>Solve integrals, derivatives, and ODEs with step-by-step working — all inline, no redirects.</p>
+      </div>
+
+      <div class="feature-card lg lg-card sr sr-delay-3">
+        <div class="lg-effect"></div><div class="lg-tint"></div><div class="lg-shine"></div>
+        <div class="feature-icon"><i class="fas fa-brain"></i></div>
+        <h3>MoeAI Assistant</h3>
+        <p>AI help that understands your curriculum. Ask anything about your CS courses.</p>
+      </div>
+
+      <div class="feature-card lg lg-card sr">
+        <div class="lg-effect"></div><div class="lg-tint"></div><div class="lg-shine"></div>
+        <div class="feature-icon"><i class="fas fa-layer-group"></i></div>
+        <h3>Smart Flashcards</h3>
+        <p>Create and review flashcards for any topic. Spaced repetition coming soon.</p>
+      </div>
+
+      <div class="feature-card lg lg-card sr sr-delay-1">
+        <div class="lg-effect"></div><div class="lg-tint"></div><div class="lg-shine"></div>
+        <div class="feature-icon"><i class="fab fa-telegram"></i></div>
+        <h3>Telegram Community</h3>
+        <p>Course materials and updates delivered straight to your Telegram. Always in sync.</p>
+      </div>
+
+    </div>
+  </div>
+
+</div><!-- end page-home -->
+
+
+<!-- ═══════════════════════════════════════════════════════════
+     PAGE: COURSES
+     ═══════════════════════════════════════════════════════════ -->
+<div class="page" id="page-courses">
+  <div class="wrap section">
+    <div class="section-head sr">
+      <div class="section-label" style="display:inline-flex;"><div class="section-label-dot"></div>Curriculum</div>
+      <!-- EDIT: Courses page heading -->
+      <h2 class="sf-title">Courses</h2>
+      <p>Interactive material aligned to your CS semester</p>
+    </div>
+
+    <!-- Learning path progress indicator -->
+    <div class="lg lg-panel sr" style="padding:28px;margin-bottom:40px;">
+      <div class="lg-effect"></div><div class="lg-tint"></div><div class="lg-shine"></div>
+      <p class="sf-label" style="color:var(--txt3);margin-bottom:20px;letter-spacing:0.06em;">YOUR LEARNING PATH</p>
+      <div class="path-row">
+        <div class="path-step done">
+          <div class="path-marker"><i class="fas fa-check" style="font-size:14px;"></i></div>
+          <div class="path-lbl">Structured<br>Programming</div>
+          <div class="path-sub">C++ · Sem 2</div>
+        </div>
+        <div class="path-step">
+          <div class="path-marker">2</div>
+          <div class="path-lbl">Logic Design</div>
+          <div class="path-sub">Circuits · Sem 2</div>
+        </div>
+        <div class="path-step">
+          <div class="path-marker">3</div>
+          <div class="path-lbl">Differential<br>Equations</div>
+          <div class="path-sub">Math II</div>
+        </div>
+        <div class="path-step">
+          <div class="path-marker">4</div>
+          <div class="path-lbl">Probability &<br>Statistics</div>
+          <div class="path-sub">Math III</div>
+        </div>
+      </div>
+    </div>
+
+    <div class="courses-grid">
+
+      <!-- Course 1 — EDIT: Update title, tags, description, progress, and video links -->
+      <div class="course-card lg lg-card sr">
+        <div class="lg-effect"></div><div class="lg-tint"></div><div class="lg-shine"></div>
+        <div class="course-icon"><i class="fab fa-cuttlefish"></i></div>
+        <h3>Structured Programming</h3>
+        <div class="course-tags">
+          <span class="tag">C++</span>
+          <span class="tag">Sem 2</span>
+        </div>
+        <p>Variables, loops, functions, arrays, pointers, structs, file I/O, and OOP fundamentals.</p>
+
+        <!-- Video source selector: YouTube or Telegram -->
+        <div class="video-source-tabs" style="margin-top:16px;">
+          <button class="vsrc-tab active" onclick="switchVideoSource('cpp-video','yt',this)">
+            <i class="fab fa-youtube" style="color:#ff4444;"></i> YouTube
+          </button>
+          <button class="vsrc-tab" onclick="switchVideoSource('cpp-video','tg',this)">
+            <i class="fab fa-telegram" style="color:#2196f3;"></i> Telegram
+          </button>
+        </div>
+
+        <!-- Video embed area -->
+        <div class="video-area" id="cpp-video">
+          <div class="video-placeholder" onclick="loadCourseVideo('cpp-video','yt')">
+            <i class="fas fa-play-circle"></i>
+            <!-- EDIT: Change the video label -->
+            <span>Click to load: Intro to C++</span>
+          </div>
+          <span class="video-type-badge vbadge-yt">YouTube</span>
+        </div>
+
+        <div class="prog-track"><div class="prog-fill" style="width:40%"></div></div>
+        <span class="sf-caption">Content ready: 40%</span>
+        <button class="card-link-btn" onclick="goPage('simulators')">
+          Open Compiler <i class="fas fa-arrow-right"></i>
+        </button>
+      </div>
+
+      <!-- Course 2 -->
+      <div class="course-card lg lg-card sr sr-delay-1">
+        <div class="lg-effect"></div><div class="lg-tint"></div><div class="lg-shine"></div>
+        <div class="course-icon"><i class="fas fa-microchip"></i></div>
+        <h3>Logic Design</h3>
+        <div class="course-tags">
+          <span class="tag">Digital Circuits</span>
+          <span class="tag">Sem 2</span>
+        </div>
+        <p>Boolean algebra, Karnaugh maps, combinational and sequential circuits, flip-flops.</p>
+
+        <div class="video-source-tabs" style="margin-top:16px;">
+          <button class="vsrc-tab active" onclick="switchVideoSource('logic-video','yt',this)">
+            <i class="fab fa-youtube" style="color:#ff4444;"></i> YouTube
+          </button>
+          <button class="vsrc-tab" onclick="switchVideoSource('logic-video','tg',this)">
+            <i class="fab fa-telegram" style="color:#2196f3;"></i> Telegram
+          </button>
+        </div>
+
+        <div class="video-area" id="logic-video">
+          <div class="video-placeholder" onclick="loadCourseVideo('logic-video','yt')">
+            <i class="fas fa-play-circle"></i>
+            <span>Click to load: Logic Gates Intro</span>
+          </div>
+          <span class="video-type-badge vbadge-yt">YouTube</span>
+        </div>
+
+        <div class="prog-track"><div class="prog-fill" style="width:20%"></div></div>
+        <span class="sf-caption">Content ready: 20%</span>
+        <button class="card-link-btn" onclick="goPage('simulators')">
+          Circuit Simulator <i class="fas fa-arrow-right"></i>
+        </button>
+      </div>
+
+      <!-- Course 3 -->
+      <div class="course-card lg lg-card sr sr-delay-2">
+        <div class="lg-effect"></div><div class="lg-tint"></div><div class="lg-shine"></div>
+        <div class="course-icon"><i class="fas fa-infinity"></i></div>
+        <h3>Differential Equations</h3>
+        <div class="course-tags">
+          <span class="tag">Math II</span>
+          <span class="tag">ODEs</span>
+        </div>
+        <p>First & second order ODEs, separable equations, Laplace transforms. Solver built-in.</p>
+
+        <div class="video-source-tabs" style="margin-top:16px;">
+          <button class="vsrc-tab active" onclick="switchVideoSource('ode-video','yt',this)">
+            <i class="fab fa-youtube" style="color:#ff4444;"></i> YouTube
+          </button>
+          <button class="vsrc-tab" onclick="switchVideoSource('ode-video','tg',this)">
+            <i class="fab fa-telegram" style="color:#2196f3;"></i> Telegram
+          </button>
+        </div>
+
+        <div class="video-area" id="ode-video">
+          <div class="video-placeholder" onclick="loadCourseVideo('ode-video','yt')">
+            <i class="fas fa-play-circle"></i>
+            <span>Click to load: Intro to ODEs</span>
+          </div>
+          <span class="video-type-badge vbadge-yt">YouTube</span>
+        </div>
+
+        <div class="prog-track"><div class="prog-fill" style="width:15%"></div></div>
+        <span class="sf-caption">Content ready: 15%</span>
+        <button class="card-link-btn" onclick="goPage('simulators')">
+          Math Solver <i class="fas fa-arrow-right"></i>
+        </button>
+      </div>
+
+      <!-- Course 4 -->
+      <div class="course-card lg lg-card sr sr-delay-3">
+        <div class="lg-effect"></div><div class="lg-tint"></div><div class="lg-shine"></div>
+        <div class="course-icon"><i class="fas fa-chart-bar"></i></div>
+        <h3>Probability & Statistics</h3>
+        <div class="course-tags">
+          <span class="tag">Math III</span>
+          <span class="tag">Sem 3</span>
+        </div>
+        <p>Probability axioms, distributions, expected value, hypothesis testing, regression.</p>
+
+        <div class="video-source-tabs" style="margin-top:16px;">
+          <button class="vsrc-tab active" onclick="switchVideoSource('prob-video','yt',this)">
+            <i class="fab fa-youtube" style="color:#ff4444;"></i> YouTube
+          </button>
+          <button class="vsrc-tab" onclick="switchVideoSource('prob-video','tg',this)">
+            <i class="fab fa-telegram" style="color:#2196f3;"></i> Telegram
+          </button>
+        </div>
+
+        <div class="video-area" id="prob-video">
+          <div class="video-placeholder" onclick="loadCourseVideo('prob-video','yt')">
+            <i class="fas fa-play-circle"></i>
+            <span>Click to load: Probability Intro</span>
+          </div>
+          <span class="video-type-badge vbadge-yt">YouTube</span>
+        </div>
+
+        <div class="prog-track"><div class="prog-fill" style="width:5%"></div></div>
+        <span class="sf-caption">Content ready: 5%</span>
+        <button class="card-link-btn" onclick="goPage('simulators')">
+          Visualizer <i class="fas fa-arrow-right"></i>
+        </button>
+      </div>
+
+    </div>
+  </div>
+</div><!-- end page-courses -->
+
+
+<!-- ═══════════════════════════════════════════════════════════
+     PAGE: SIMULATORS
+     4 simulators, one per subject.
+     ═══════════════════════════════════════════════════════════ -->
+<div class="page" id="page-simulators">
+  <div class="wrap section">
+    <div class="section-head sr">
+      <div class="section-label" style="display:inline-flex;"><div class="section-label-dot"></div>Tools</div>
+      <h2 class="sf-title">Simulators</h2>
+      <p>Four fully functional tools — one per subject. No installs, no accounts needed.</p>
+    </div>
+
+    <div class="sim-grid">
+
+      <!-- ── SIM 1: C++ COMPILER ─── (Computing Fundamentals) ─── -->
+      <div class="sim-card lg lg-card sr" style="grid-column: 1 / -1;">
+        <div class="lg-effect"></div><div class="lg-tint"></div><div class="lg-shine"></div>
+        <div style="display:flex;align-items:center;gap:12px;margin-bottom:18px;">
+          <div style="width:42px;height:42px;border-radius:12px;background:linear-gradient(135deg,var(--accent),var(--accent2));display:flex;align-items:center;justify-content:center;color:#fff;font-size:18px;">
+            <i class="fas fa-terminal"></i>
+          </div>
+          <div>
+            <h3 class="sf-headline">C++ Compiler</h3>
+            <!-- EDIT: subtitle -->
+            <p class="sf-caption">Computing Fundamentals · Full C++17 · Write, run, and debug instantly</p>
+          </div>
+          <a href="https://onecompiler.com/cpp" target="_blank"
+             class="btn btn-fire" style="margin-left:auto;text-decoration:none;padding:9px 16px;font-size:13px;">
+            <i class="fas fa-external-link-alt"></i> Full Screen
+          </a>
+        </div>
+        <div style="border-radius:14px;overflow:hidden;border:1px solid var(--border);">
+          <iframe
+            src="https://onecompiler.com/embed/cpp?theme=dark&hideTitle=true&hideNew=true&hideStdin=false"
+            width="100%" height="500"
+            style="border:none;display:block;background:#0d0d14;"
+            allowfullscreen title="C++ Compiler">
+          </iframe>
+        </div>
+      </div>
+
+      <!-- ── SIM 2: LOGISIM GATE SIMULATOR ─── (Logic Design) ─── -->
+      <div class="sim-card lg lg-card sr" style="grid-column: 1 / -1;">
+        <div class="lg-effect"></div><div class="lg-tint"></div><div class="lg-shine"></div>
+        <div style="display:flex;align-items:center;gap:12px;margin-bottom:16px;flex-wrap:wrap;">
+          <div style="width:42px;height:42px;border-radius:12px;background:linear-gradient(135deg,var(--accent),var(--accent2));display:flex;align-items:center;justify-content:center;color:#fff;font-size:18px;">
+            <i class="fas fa-microchip"></i>
+          </div>
+          <div>
+            <h3 class="sf-headline">Logic Gate Simulator</h3>
+            <p class="sf-caption">Logic Design · AND, OR, NOT, NAND, NOR, XOR, XNOR · Auto truth table</p>
+          </div>
+        </div>
+
+        <!-- Toolbar -->
+        <div class="logisim-wrap">
+          <div class="logisim-toolbar">
+            <!-- Preset circuits -->
+            <span style="font-size:11px;color:var(--txt3);font-weight:600;margin-right:4px;">PRESETS:</span>
+            <button class="gate-btn" onclick="loadLogisimPreset('half-adder')">Half Adder</button>
+            <button class="gate-btn" onclick="loadLogisimPreset('full-adder')">Full Adder</button>
+            <button class="gate-btn" onclick="loadLogisimPreset('sr-latch')">SR Latch</button>
+            <button class="gate-btn" onclick="loadLogisimPreset('decoder')">2-to-4 Decoder</button>
+            <span style="margin:0 6px;color:var(--border2);">|</span>
+            <!-- Add gates -->
+            <span style="font-size:11px;color:var(--txt3);font-weight:600;margin-right:4px;">ADD:</span>
+            <button class="gate-btn" data-mode="addIN"   onclick="setLogisimMode('addIN',this)">IN</button>
+            <button class="gate-btn" data-mode="addOUT"  onclick="setLogisimMode('addOUT',this)">OUT</button>
+            <button class="gate-btn" data-mode="addAND"  onclick="setLogisimMode('addAND',this)">AND</button>
+            <button class="gate-btn" data-mode="addOR"   onclick="setLogisimMode('addOR',this)">OR</button>
+            <button class="gate-btn" data-mode="addNOT"  onclick="setLogisimMode('addNOT',this)">NOT</button>
+            <button class="gate-btn" data-mode="addNAND" onclick="setLogisimMode('addNAND',this)">NAND</button>
+            <button class="gate-btn" data-mode="addNOR"  onclick="setLogisimMode('addNOR',this)">NOR</button>
+            <button class="gate-btn" data-mode="addXOR"  onclick="setLogisimMode('addXOR',this)">XOR</button>
+            <button class="gate-btn" data-mode="addXNOR" onclick="setLogisimMode('addXNOR',this)">XNOR</button>
+            <span style="margin:0 6px;color:var(--border2);">|</span>
+            <button class="gate-btn active" data-mode="select" onclick="setLogisimMode('select',this)"><i class="fas fa-mouse-pointer"></i> Select</button>
+            <button class="gate-btn danger" onclick="deleteLogisimSelected()"><i class="fas fa-trash"></i> Delete</button>
+            <button class="gate-btn danger" onclick="clearLogisim()"><i class="fas fa-times"></i> Clear</button>
+          </div>
+          <!-- Canvas -->
+          <canvas id="logisim-canvas" class="logisim-canvas" style="height:400px;background:#050510;"></canvas>
+        </div>
+
+        <!-- Instructions + Truth table -->
+        <div style="display:grid;grid-template-columns:1fr 1fr;gap:16px;margin-top:14px;">
+          <div>
+            <p class="sf-caption" style="margin-bottom:8px;">
+              <i class="fas fa-info-circle" style="color:var(--accent2);"></i>
+              <strong style="color:var(--txt2);">How to use:</strong>
+              Click a gate button then click on the canvas to place it.
+              Click IN nodes to toggle 0/1. Select + drag to move gates.
+              Green wires = HIGH (1), dark wires = LOW (0).
+            </p>
+          </div>
+          <div>
+            <p class="sf-caption" style="margin-bottom:8px;"><i class="fas fa-table" style="color:var(--accent2);"></i> <strong style="color:var(--txt2);">Truth Table (auto-generated):</strong></p>
+            <div class="logisim-truth-table" id="logisim-tt"></div>
+          </div>
+        </div>
+      </div>
+
+      <!-- ── SIM 3: CALCULUS & ODE SOLVER ─── (Calculus / ODE) ─── -->
+      <div class="sim-card lg lg-card sr" style="grid-column: 1 / -1;">
+        <div class="lg-effect"></div><div class="lg-tint"></div><div class="lg-shine"></div>
+        <div style="display:flex;align-items:center;gap:12px;margin-bottom:18px;flex-wrap:wrap;">
+          <div style="width:42px;height:42px;border-radius:12px;background:linear-gradient(135deg,var(--accent),var(--accent2));display:flex;align-items:center;justify-content:center;color:#fff;font-size:18px;">
+            <i class="fas fa-square-root-alt"></i>
+          </div>
+          <div>
+            <h3 class="sf-headline">Calculus & ODE Solver</h3>
+            <p class="sf-caption">Derivatives · Definite/Indefinite Integrals · ODEs · Series · Limits · Graphing</p>
+          </div>
+        </div>
+
+        <div class="math-solver-wrap">
+          <!-- Input -->
+          <div class="math-input-row">
+            <input class="math-input" id="mathIn"
+                   placeholder="e.g.  x^2 + 3*x   |   sin(x)/x   |   x^2 from 0 to 3   |   y'' + 2y' + 5y = 0">
+          </div>
+
+          <!-- Operation tabs — ALL HAVE EXPLICIT COLOR so no pure-white buttons -->
+          <div class="math-btn-row">
+            <!-- btn-fire = filled gradient (always visible) -->
+            <button class="btn btn-fire" onclick="solveMath('derivative')"
+                    style="padding:10px 18px;font-size:13px;">
+              <i class="fas fa-arrow-trend-up"></i> d/dx Derivative
+            </button>
+            <!-- Explicit color on all remaining buttons -->
+            <button onclick="solveMath('integral')"
+                    style="padding:10px 18px;font-size:13px;border-radius:999px;cursor:pointer;font-family:inherit;font-weight:600;background:var(--tint2);border:1px solid var(--border2);color:var(--txt1);display:inline-flex;align-items:center;gap:8px;transition:all 0.2s;">
+              ∫ Integrate
+            </button>
+            <button onclick="solveMath('ode')"
+                    style="padding:10px 18px;font-size:13px;border-radius:999px;cursor:pointer;font-family:inherit;font-weight:600;background:var(--tint2);border:1px solid var(--border2);color:var(--txt1);display:inline-flex;align-items:center;gap:8px;transition:all 0.2s;">
+              <i class="fas fa-wave-square"></i> ODE Solver
+            </button>
+            <button onclick="solveMath('simplify')"
+                    style="padding:10px 18px;font-size:13px;border-radius:999px;cursor:pointer;font-family:inherit;font-weight:600;background:var(--tint2);border:1px solid var(--border2);color:var(--txt1);display:inline-flex;align-items:center;gap:8px;transition:all 0.2s;">
+              <i class="fas fa-equals"></i> Simplify
+            </button>
+            <button onclick="solveMath('series')"
+                    style="padding:10px 18px;font-size:13px;border-radius:999px;cursor:pointer;font-family:inherit;font-weight:600;background:var(--tint2);border:1px solid var(--border2);color:var(--txt1);display:inline-flex;align-items:center;gap:8px;transition:all 0.2s;">
+              <i class="fas fa-infinity"></i> Series
+            </button>
+            <button onclick="solveMath('limit')"
+                    style="padding:10px 18px;font-size:13px;border-radius:999px;cursor:pointer;font-family:inherit;font-weight:600;background:var(--tint2);border:1px solid var(--border2);color:var(--txt1);display:inline-flex;align-items:center;gap:8px;transition:all 0.2s;">
+              <i class="fas fa-arrow-right-to-bracket"></i> Limit
+            </button>
+            <button onclick="solveMath('plot')"
+                    style="padding:10px 18px;font-size:13px;border-radius:999px;cursor:pointer;font-family:inherit;font-weight:600;background:var(--tint2);border:1px solid var(--border2);color:var(--txt1);display:inline-flex;align-items:center;gap:8px;transition:all 0.2s;">
+              <i class="fas fa-chart-line"></i> Plot
+            </button>
+          </div>
+
+          <!-- Result -->
+          <div class="math-result" id="mathOut"></div>
+
+          <!-- Graph -->
+          <div class="math-canvas-wrap" id="mathCanvasWrap" style="display:none;margin-top:14px;padding:16px;">
+            <canvas id="mathCanvas" style="max-height:280px;"></canvas>
+          </div>
+
+          <p class="sf-caption" style="margin-top:10px;">
+            <i class="fas fa-info-circle" style="color:var(--accent2);"></i>
+            Integrals: type <code style="color:var(--accent3);">x^2 from 0 to 3</code> · ODE: type <code style="color:var(--accent3);">y'' + 2y' + 5y = 0</code> · Limit: type <code style="color:var(--accent3);">sin(x)/x as x -> 0</code>
+          </p>
+        </div>
+      </div>
+
+      <!-- ── SIM 4: PROBABILITY VISUALIZER ─── (Probability & Stats) ─── -->
+      <div class="sim-card lg lg-card sr" style="grid-column: 1 / -1;">
+        <div class="lg-effect"></div><div class="lg-tint"></div><div class="lg-shine"></div>
+        <div style="display:flex;align-items:center;gap:12px;margin-bottom:18px;flex-wrap:wrap;">
+          <div style="width:42px;height:42px;border-radius:12px;background:linear-gradient(135deg,var(--accent),var(--accent2));display:flex;align-items:center;justify-content:center;color:#fff;font-size:18px;">
+            <i class="fas fa-chart-area"></i>
+          </div>
+          <div>
+            <h3 class="sf-headline">Probability Distribution Visualizer</h3>
+            <p class="sf-caption">Normal · Binomial · Poisson · Uniform · Exponential — with live statistics</p>
+          </div>
+        </div>
+
+        <!-- Distribution selector tabs -->
+        <div class="prob-dist-tabs">
+          <button class="prob-dist-tab active" onclick="setProbDist('normal',this)">Normal</button>
+          <button class="prob-dist-tab" onclick="setProbDist('binomial',this)">Binomial</button>
+          <button class="prob-dist-tab" onclick="setProbDist('poisson',this)">Poisson</button>
+          <button class="prob-dist-tab" onclick="setProbDist('uniform',this)">Uniform</button>
+          <button class="prob-dist-tab" onclick="setProbDist('exponential',this)">Exponential</button>
+        </div>
+
+        <!-- Normal distribution controls -->
+        <div class="prob-ctrl-group prob-controls" data-dist="normal">
+          <div class="prob-slider-row">
+            <div class="prob-slider-label">Mean (μ) = <span id="prob-mu-val">0.0</span></div>
+            <input type="range" id="prob-mu" min="-5" max="5" step="0.1" value="0" oninput="updateProbChart()">
+          </div>
+          <div class="prob-slider-row">
+            <div class="prob-slider-label">Std Dev (σ) = <span id="prob-sigma-val">1.0</span></div>
+            <input type="range" id="prob-sigma" min="0.2" max="4" step="0.1" value="1" oninput="updateProbChart()">
+          </div>
+        </div>
+
+        <!-- Binomial controls -->
+        <div class="prob-ctrl-group prob-controls" data-dist="binomial" style="display:none;">
+          <div class="prob-slider-row">
+            <div class="prob-slider-label">Trials (n) = <span id="prob-n-val">10</span></div>
+            <input type="range" id="prob-n" min="1" max="30" step="1" value="10" oninput="updateProbChart()">
+          </div>
+          <div class="prob-slider-row">
+            <div class="prob-slider-label">Probability (p) = <span id="prob-p-val">0.50</span></div>
+            <input type="range" id="prob-p" min="0.01" max="0.99" step="0.01" value="0.5" oninput="updateProbChart()">
+          </div>
+        </div>
+
+        <!-- Poisson controls -->
+        <div class="prob-ctrl-group" data-dist="poisson" style="display:none;margin-bottom:14px;">
+          <div class="prob-slider-label">Rate (λ) = <span id="prob-lambda-val">3.0</span></div>
+          <input type="range" id="prob-lambda" min="0.5" max="15" step="0.5" value="3" oninput="updateProbChart()" style="width:100%;">
+        </div>
+
+        <!-- Uniform controls -->
+        <div class="prob-ctrl-group prob-controls" data-dist="uniform" style="display:none;">
+          <div class="prob-slider-row">
+            <div class="prob-slider-label">a = <span id="prob-a-val">0.0</span></div>
+            <input type="range" id="prob-a" min="-5" max="4" step="0.5" value="0" oninput="updateProbChart()">
+          </div>
+          <div class="prob-slider-row">
+            <div class="prob-slider-label">b = <span id="prob-b-val">1.0</span></div>
+            <input type="range" id="prob-b" min="-4" max="5" step="0.5" value="1" oninput="updateProbChart()">
+          </div>
+        </div>
+
+        <!-- Exponential controls -->
+        <div class="prob-ctrl-group" data-dist="exponential" style="display:none;margin-bottom:14px;">
+          <div class="prob-slider-label">Rate (λ) = <span id="prob-lam2-val">1.0</span></div>
+          <input type="range" id="prob-lam2" min="0.1" max="5" step="0.1" value="1" oninput="updateProbChart()" style="width:100%;">
+        </div>
+
+        <!-- Chart -->
+        <div class="prob-chart-wrap">
+          <canvas id="probCanvas" style="max-height:300px;"></canvas>
+        </div>
+
+        <!-- Stats row -->
+        <div class="prob-stat-row">
+          <div class="prob-stat">
+            <div class="prob-stat-n" id="prob-stat-e">—</div>
+            <div class="prob-stat-l">Expected Value E[X]</div>
+          </div>
+          <div class="prob-stat">
+            <div class="prob-stat-n" id="prob-stat-v">—</div>
+            <div class="prob-stat-l">Variance Var[X]</div>
+          </div>
+          <div class="prob-stat">
+            <div class="prob-stat-n" id="prob-stat-sd">—</div>
+            <div class="prob-stat-l">Std Deviation σ</div>
+          </div>
+        </div>
+
+        <p class="sf-caption" style="margin-top:10px;">
+          <i class="fas fa-info-circle" style="color:var(--accent2);"></i>
+          Select a distribution and move the sliders. Chart updates live. Stats are exact closed-form formulas from your curriculum.
+        </p>
+      </div>
+
+    </div>
+  </div>
+</div><!-- end page-simulators -->
+
+
+<!-- ═══════════════════════════════════════════════════════════
+     PAGE: QUIZ
+     ═══════════════════════════════════════════════════════════ -->
+<div class="page" id="page-quiz">
+  <div class="wrap section">
+    <div class="quiz-container">
+      <div class="section-head sr" style="text-align:left;">
+        <div class="section-label" style="display:inline-flex;"><div class="section-label-dot"></div>
+          <span id="quiz-topic-badge">C++ / OOP</span>
+        </div>
+        <h2 class="sf-title">Daily Quiz</h2>
+      </div>
+      <div class="quiz-box lg lg-panel sr">
+        <div class="lg-effect"></div><div class="lg-tint"></div><div class="lg-shine"></div>
+        <p id="quiz-q" class="quiz-q">Which keyword creates a class in C++?</p>
+        <div id="quiz-opts" class="quiz-opts">
+          <!-- Options rendered by JS loadQuizQuestion() -->
+        </div>
+        <div id="quiz-fb" class="quiz-fb"></div>
+        <div id="quiz-expl" class="quiz-expl"></div>
+        <button class="card-link-btn" onclick="toggleExplanation()" style="margin-top:16px;">
+          <i class="fas fa-book"></i> Show Explanation
+        </button>
+      </div>
+
+      <!-- Topic selector -->
+      <div class="quiz-topics sr">
+        <button class="tag" style="cursor:pointer;padding:7px 16px;" onclick="loadQuizQuestion('cpp')">C++</button>
+        <button class="tag" style="cursor:pointer;padding:7px 16px;" onclick="loadQuizQuestion('arrays')">Arrays</button>
+        <button class="tag" style="cursor:pointer;padding:7px 16px;" onclick="loadQuizQuestion('logic')">Logic Design</button>
+        <button class="tag" style="cursor:pointer;padding:7px 16px;" onclick="loadQuizQuestion('calculus')">Calculus</button>
+        <button class="tag" style="cursor:pointer;padding:7px 16px;" onclick="loadQuizQuestion('prob')">Probability</button>
+      </div>
+    </div>
+  </div>
+</div>
+
+
+<!-- ═══════════════════════════════════════════════════════════
+     PAGE: FLASHCARDS
+     ═══════════════════════════════════════════════════════════ -->
+<div class="page" id="page-flashcards">
+  <div class="wrap section">
+    <div class="section-head sr">
+      <div class="section-label" style="display:inline-flex;"><div class="section-label-dot"></div>Study</div>
+      <h2 class="sf-title">Flashcards</h2>
+      <p>Create cards for any topic. Click a card to flip it.</p>
+    </div>
+
+    <!-- Add card form -->
+    <div class="lg lg-panel sr" style="padding:24px;margin-bottom:24px;">
+      <div class="lg-effect"></div><div class="lg-tint"></div><div class="lg-shine"></div>
+      <div class="fc-add-row">
+        <input class="fc-input" id="fc-f" placeholder="Front (question or term)">
+        <input class="fc-input" id="fc-b" placeholder="Back (answer or definition)">
+      </div>
+      <div style="display:flex;gap:10px;align-items:center;flex-wrap:wrap;">
+        <select class="fc-input" id="fc-cat" style="max-width:180px;">
+          <option>C++</option><option>Logic Design</option>
+          <option>Calculus</option><option>Probability</option><option>General</option>
+        </select>
+        <button class="btn btn-fire" onclick="addFlashcard()" style="padding:10px 20px;font-size:14px;">
+          <i class="fas fa-plus"></i> Add Card
+        </button>
+        <button class="btn lg lg-pill" onclick="clearFlashcards()" style="padding:10px 16px;font-size:14px;border:1px solid var(--border2);">
+          <div class="lg-effect"></div><div class="lg-tint"></div><div class="lg-shine"></div>
+          <i class="fas fa-trash"></i> Clear All
+        </button>
+      </div>
+    </div>
+
+    <!-- Card deck rendered by renderFlashcards() in app.js -->
+    <div id="fc-deck" class="fc-deck"></div>
+  </div>
+</div>
+
+
+<!-- ═══════════════════════════════════════════════════════════
+     PAGE: MOEAI
+     ═══════════════════════════════════════════════════════════ -->
+<div class="page" id="page-moeai">
+  <div class="wrap section">
+    <div class="section-head sr">
+      <div class="section-label" style="display:inline-flex;"><div class="section-label-dot"></div>AI</div>
+      <!-- EDIT: MoeAI section title -->
+      <h2 class="sf-title">MoeAI</h2>
+      <p>Your AI study assistant — coming soon</p>
+    </div>
+    <div class="moeai-layout">
+      <div class="moeai-sphere lg sr">
+        <div class="lg-effect"></div><div class="lg-tint"></div><div class="lg-shine"></div>
+        🤖
+      </div>
+      <div>
+        <!-- EDIT: MoeAI description -->
+        <h2 class="moeai-title">Ask Anything About Your CS Courses</h2>
+        <p class="sf-body" style="margin-bottom:20px;">MoeAI understands your curriculum and can explain concepts, debug code, and help you prepare for exams.</p>
+        <div class="moeai-chat">
+          <div class="moeai-bubble user">How do I implement a binary search tree in C++?</div>
+          <div class="moeai-bubble ai">Great question! A BST node has a value and two child pointers. Let me walk you through the implementation step by step…</div>
+        </div>
+        <button class="btn btn-fire" onclick="showToast('🤖 MoeAI coming soon!')">
+          <i class="fas fa-rocket"></i> Coming Soon
+        </button>
+      </div>
+    </div>
+  </div>
+</div>
+
+
+<!-- ═══════════════════════════════════════════════════════════
+     PAGE: PRICING
+     ═══════════════════════════════════════════════════════════ -->
+<div class="page" id="page-pricing">
+  <div class="wrap section">
+    <div class="section-head sr">
+      <div class="section-label" style="display:inline-flex;"><div class="section-label-dot"></div>Plans</div>
+      <h2 class="sf-title">Simple Pricing</h2>
+      <p>Start free, upgrade when you need more</p>
+    </div>
+    <div class="pricing-grid">
+
+      <div class="price-card lg lg-card sr">
+        <div class="lg-effect"></div><div class="lg-tint"></div><div class="lg-shine"></div>
+        <div class="price-tier">Free</div>
+        <!-- EDIT: Free plan features -->
+        <div class="price-num">0<span style="font-size:22px;font-weight:400;"> EGP</span></div>
+        <div class="price-per">forever</div>
+        <ul class="price-features">
+          <li><i class="fas fa-check"></i> C++ Compiler</li>
+          <li><i class="fas fa-check"></i> 4 Core Courses</li>
+          <li><i class="fas fa-check"></i> Simulators</li>
+          <li><i class="fas fa-check"></i> Daily Quiz</li>
+          <li><i class="fas fa-check"></i> Flashcards</li>
+          <li><i class="fas fa-check"></i> Telegram Community</li>
+        </ul>
+        <button class="price-btn" onclick="document.getElementById('signupModal').classList.add('open')">
+          Get Started Free
+        </button>
+      </div>
+
+      <div class="price-card lg lg-card sr sr-delay-1">
+        <div class="lg-effect"></div><div class="lg-tint"></div><div class="lg-shine"></div>
+        <div class="price-tier">Pro</div>
+        <!-- EDIT: Pro plan price — update id="pro-p" value in admin settings too -->
+        <div class="price-num"><span id="pro-p">??</span><span style="font-size:22px;font-weight:400;"> EGP</span></div>
+        <div class="price-per">per month</div>
+        <ul class="price-features">
+          <li><i class="fas fa-check"></i> Everything in Free</li>
+          <li><i class="fas fa-check"></i> MoeAI Assistant</li>
+          <li><i class="fas fa-check"></i> Past Exam Archives</li>
+          <li><i class="fas fa-check"></i> Priority Support</li>
+          <li><i class="fas fa-check"></i> Offline Access</li>
+          <!-- EDIT: Add more pro features here -->
+        </ul>
+        <button class="price-btn fire" onclick="showToast('💎 Pro coming soon!')">
+          Upgrade to Pro
+        </button>
+      </div>
+
+    </div>
+  </div>
+</div>
+
+
+<!-- ═══════════════════════════════════════════════════════════
+     PAGE: ABOUT
+     ═══════════════════════════════════════════════════════════ -->
+<div class="page" id="page-about">
+  <div class="wrap section">
+    <div class="section-head sr">
+      <div class="section-label" style="display:inline-flex;"><div class="section-label-dot"></div>Story</div>
+      <!-- EDIT: About section title and story -->
+      <h2 class="sf-title">About EDUMOE</h2>
+      <p style="max-width:640px;margin:0 auto;">
+        <!-- EDIT: Your about text here -->
+        Built by an Egyptian CS student who wanted better tools for learning.
+        EDUMOE is free, open, and built to grow with your curriculum.
+      </p>
+    </div>
+
+    <div class="about-grid sr">
+      <!-- EDIT: These numbers are yours to fill in when ready -->
+      <div class="about-fact lg lg-card">
+        <div class="lg-effect"></div><div class="lg-tint"></div><div class="lg-shine"></div>
+        <div class="num">—</div><div class="lbl">Students enrolled</div>
+      </div>
+      <div class="about-fact lg lg-card">
+        <div class="lg-effect"></div><div class="lg-tint"></div><div class="lg-shine"></div>
+        <div class="num">4</div><div class="lbl">Active courses</div>
+      </div>
+      <div class="about-fact lg lg-card">
+        <div class="lg-effect"></div><div class="lg-tint"></div><div class="lg-shine"></div>
+        <div class="num">6</div><div class="lbl">Simulators</div>
+      </div>
+      <div class="about-fact lg lg-card">
+        <div class="lg-effect"></div><div class="lg-tint"></div><div class="lg-shine"></div>
+        <div class="num">🇪🇬</div><div class="lbl">Made in Egypt</div>
+      </div>
+    </div>
+  </div>
+</div>
+
+
+<!-- ═══════════════════════════════════════════════════════════
+     FOOTER
+     ═══════════════════════════════════════════════════════════ -->
+<footer class="footer" id="footer">
+  <div class="wrap">
+    <div class="footer-grid">
+
+      <!-- Brand column -->
+      <div class="footer-brand">
+        <div class="footer-logo">EDUMOE</div>
+        <!-- EDIT: Footer description -->
+        <p>Interactive CS education for students across Egypt. Built by a student. Free forever.</p>
+        <div class="footer-social">
+          <!-- EDIT: Update your social links -->
+          <a href="https://t.me/CS_Epic_Save" target="_blank" class="fsoc" title="Telegram">
+            <i class="fab fa-telegram"></i>
+          </a>
+          <a href="#" class="fsoc" title="YouTube">
+            <i class="fab fa-youtube"></i>
+          </a>
+          <!-- EDIT: Add your email here -->
+          <a href="mailto:your@email.com" class="fsoc" title="Email">
+            <i class="fas fa-envelope"></i>
+          </a>
+        </div>
+      </div>
+
+      <div class="footer-col">
+        <h5>LEARN</h5>
+        <a href="#" onclick="goPage('courses');return false;">All Courses</a>
+        <a href="#" onclick="goPage('simulators');return false;">Simulators</a>
+        <a href="#" onclick="goPage('quiz');return false;">Daily Quiz</a>
+        <a href="#" onclick="goPage('flashcards');return false;">Flashcards</a>
+      </div>
+
+      <div class="footer-col">
+        <h5>TOOLS</h5>
+        <a href="#" onclick="goPage('simulators');return false;">C++ Compiler</a>
+        <a href="#" onclick="goPage('simulators');return false;">Math Solver</a>
+        <a href="#" onclick="goPage('simulators');return false;">Physics Sim</a>
+        <a href="#" onclick="goPage('moeai');return false;">MoeAI</a>
+      </div>
+
+      <div class="footer-col">
+        <h5>PLATFORM</h5>
+        <a href="#" onclick="goPage('pricing');return false;">Pricing</a>
+        <a href="#" onclick="goPage('about');return false;">About</a>
+        <!-- EDIT: Add admin link if you want it visible — or keep it private -->
+        <a href="admin.html">Admin</a>
+      </div>
+
+      <div class="footer-col">
+        <h5>CONNECT</h5>
+        <!-- EDIT: Your Telegram channel -->
+        <a href="https://t.me/CS_Epic_Save" target="_blank">
+          <i class="fab fa-telegram"></i> Telegram Channel
+        </a>
+        <a href="#" onclick="showToast('📬 Contact coming soon!')">Contact Us</a>
+      </div>
+
+    </div>
+    <div class="footer-bottom">
+      <!-- EDIT: Change the copyright name -->
+      © <span id="yr"></span> EDUMOE. Made with ❤️ in Egypt.
+    </div>
+  </div>
+</footer>
+
+
+<!-- ─── TOAST NOTIFICATION ───────────────────────────────────── -->
+<div class="toast lg" id="toast">
+  <div class="lg-effect"></div><div class="lg-tint"></div><div class="lg-shine"></div>
+  <span id="toast-msg"></span>
+</div>
+
+<!-- ─── MODAL: LOGIN ─────────────────────────────────────────── -->
+<div class="modal-overlay" id="loginModal">
+  <div class="modal-box lg lg-panel">
+    <div class="lg-effect"></div><div class="lg-tint"></div><div class="lg-shine"></div>
+    <button class="m-close" onclick="document.getElementById('loginModal').classList.remove('open')">
+      <i class="fas fa-times"></i>
+    </button>
+    <h2>Welcome back</h2>
+    <input class="m-input" type="email"    id="loginEmail"    placeholder="Email address"
+           onkeydown="if(event.key==='Enter')doLogin()">
+    <input class="m-input" type="password" id="loginPassword" placeholder="Password"
+           onkeydown="if(event.key==='Enter')doLogin()">
+    <button class="m-btn m-btn-fire" onclick="doLogin()">
+      <i class="fas fa-sign-in-alt"></i> Log In
+    </button>
+    <div class="m-divider">or</div>
+    <button class="m-btn" onclick="document.getElementById('loginModal').classList.remove('open'); document.getElementById('signupModal').classList.add('open')">
+      Create an account
+    </button>
+    <div class="m-switch">
+      Don't have an account?
+      <a onclick="document.getElementById('loginModal').classList.remove('open'); document.getElementById('signupModal').classList.add('open')">
+        Sign up free
+      </a>
+    </div>
+  </div>
+</div>
+
+<!-- ─── MODAL: SIGN UP ───────────────────────────────────────── -->
+<div class="modal-overlay" id="signupModal">
+  <div class="modal-box lg lg-panel">
+    <div class="lg-effect"></div><div class="lg-tint"></div><div class="lg-shine"></div>
+    <button class="m-close" onclick="document.getElementById('signupModal').classList.remove('open')">
+      <i class="fas fa-times"></i>
+    </button>
+    <h2>Create account</h2>
+    <input class="m-input" type="text"     id="signupName"     placeholder="Full name">
+    <input class="m-input" type="email"    id="signupEmail"    placeholder="Email address">
+    <input class="m-input" type="password" id="signupPassword" placeholder="Password (6+ characters)"
+           onkeydown="if(event.key==='Enter')doSignup()">
+    <button class="m-btn m-btn-fire" onclick="doSignup()">
+      <i class="fas fa-user-plus"></i> Create Account
+    </button>
+    <div class="m-divider">or</div>
+    <button class="m-btn" onclick="document.getElementById('signupModal').classList.remove('open'); document.getElementById('loginModal').classList.add('open')">
+      Already have an account? Log in
+    </button>
+    <p class="sf-caption" style="text-align:center;margin-top:10px;color:var(--txt3);">
+      By signing up you agree to our terms. Free forever.
+    </p>
+  </div>
+</div>
+
+
+<!-- ─── SCRIPTS ──────────────────────────────────────────────── -->
+<script src="app.js"></script>
+<script>
+  // ── Initialize quiz on page load ────────────────────────────
+  document.addEventListener('DOMContentLoaded', () => {
+    loadQuizQuestion('cpp');
+    initScrollReveal();
+    initProbabilityChart();
+  });
+
+  // ── Course video helper functions ────────────────────────────
+  // EDIT: Replace these YouTube video IDs and Telegram post links
+  // with your actual course videos.
+  const COURSE_VIDEOS = {
+    'cpp-video':   { yt: 'YOUR_CPP_YOUTUBE_ID',   tg: 'https://t.me/CS_Epic_Save/1' },
+    'logic-video': { yt: 'YOUR_LOGIC_YOUTUBE_ID', tg: 'https://t.me/CS_Epic_Save/2' },
+    'ode-video':   { yt: 'YOUR_ODE_YOUTUBE_ID',   tg: 'https://t.me/CS_Epic_Save/3' },
+    'prob-video':  { yt: 'YOUR_PROB_YOUTUBE_ID',  tg: 'https://t.me/CS_Epic_Save/4' }
+  };
+
+  function switchVideoSource(videoId, source, tabEl) {
+    // Update active tab style
+    tabEl.closest('.video-source-tabs').querySelectorAll('.vsrc-tab').forEach(t => t.classList.remove('active'));
+    tabEl.classList.add('active');
+    // Update badge
+    const badge = document.querySelector(`#${videoId} + .video-type-badge`) ||
+                  document.querySelector(`#${videoId} .video-type-badge`);
+    // Store source preference on the element
+    document.getElementById(videoId)?.setAttribute('data-source', source);
+  }
+
+  function loadCourseVideo(videoId, source) {
+    const area    = document.getElementById(videoId);
+    const videos  = COURSE_VIDEOS[videoId];
+    const src     = area?.getAttribute('data-source') || source || 'yt';
+    if (!area || !videos) return;
+
+    if (src === 'yt') {
+      const ytId = videos.yt;
+      if (ytId.startsWith('YOUR_')) {
+        showToast('⚠️ Add your YouTube video ID in index.html COURSE_VIDEOS');
+        return;
+      }
+      area.innerHTML = `
+        <iframe src="https://www.youtube.com/embed/${ytId}?autoplay=1&rel=0"
+                style="width:100%;height:100%;border:none;"
+                allowfullscreen allow="autoplay">
+        </iframe>`;
+    } else {
+      // Telegram: open in new tab (Telegram posts can't be iframe-embedded)
+      window.open(videos.tg, '_blank');
+      showToast('📱 Opening in Telegram...');
+    }
+  }
+</script>
+</body>
+</html>

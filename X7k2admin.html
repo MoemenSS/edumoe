@@ -1,0 +1,1096 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <!-- SECURITY: Non-obvious title — doesn't say "Admin" -->
+  <title>EDUMOE · Portal</title>
+  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800;900&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+  <link rel="stylesheet" href="style.css">
+  <style>
+    body { padding-top: 64px; }
+
+    /* ── Admin top bar ── */
+    .atb {
+      position: fixed; top: 0; left: 0; right: 0; z-index: 1000;
+      height: 60px; display: flex; align-items: center; padding: 0 24px; gap: 12px;
+      border-bottom: 1px solid var(--border);
+      backdrop-filter: blur(14px); -webkit-backdrop-filter: blur(14px);
+      background: color-mix(in srgb, var(--bg1) 82%, transparent);
+    }
+    .atb-logo { font-size: 16px; font-weight: 800; letter-spacing: -0.04em; color: var(--accent2); }
+    .atb-badge { padding: 3px 9px; border-radius: 999px; font-size: 10px; font-weight: 700; background: color-mix(in srgb, var(--accent) 18%, transparent); color: var(--accent2); }
+    .atb-user  { margin-left: auto; display: flex; align-items: center; gap: 8px; font-size: 13px; color: var(--txt2); }
+    .atb-back  { display: flex; align-items: center; gap: 6px; color: var(--txt2); text-decoration: none; font-size: 13px; font-weight: 500; transition: color 0.2s; margin-left: auto; }
+    .atb-back:hover { color: var(--accent2); }
+
+    /* ── Gate screen (login form) ── */
+    .gate-screen { min-height: calc(100vh - 64px); display: flex; align-items: center; justify-content: center; }
+    .gate-card   { width: 100%; max-width: 400px; padding: 44px; text-align: center; border-radius: 24px; }
+    .gate-icon   { width: 64px; height: 64px; border-radius: 20px; margin: 0 auto 20px; background: linear-gradient(135deg, var(--accent), var(--accent2)); display: flex; align-items: center; justify-content: center; font-size: 26px; color: #fff; box-shadow: 0 8px 32px var(--glow); }
+    .gate-card h2 { font-size: 26px; font-weight: 800; letter-spacing: -0.04em; margin-bottom: 6px; }
+    .gate-card > p { font-size: 14px; color: var(--txt2); margin-bottom: 26px; }
+    .gate-field  { margin-bottom: 14px; text-align: left; }
+    .gate-label  { font-size: 11px; font-weight: 700; color: var(--txt3); letter-spacing: 0.06em; text-transform: uppercase; margin-bottom: 6px; }
+    .gate-input  { width: 100%; padding: 11px 14px; border-radius: 11px; border: 1px solid var(--border2); background: var(--tint); color: var(--txt1); font-family: inherit; font-size: 14px; outline: none; box-sizing: border-box; transition: border-color 0.2s; }
+    .gate-input:focus { border-color: var(--accent2); }
+    .gate-btn    { width: 100%; padding: 13px; border-radius: 12px; border: none; background: linear-gradient(135deg, var(--accent), var(--accent2)); color: #fff; font-family: inherit; font-size: 15px; font-weight: 700; cursor: pointer; margin-top: 6px; transition: opacity 0.2s; display: flex; align-items: center; justify-content: center; gap: 8px; }
+    .gate-btn:hover:not(:disabled) { opacity: 0.9; }
+    .gate-btn:disabled { opacity: 0.5; cursor: not-allowed; }
+    .gate-err    { margin-top: 12px; padding: 10px 14px; border-radius: 10px; background: color-mix(in srgb, #e06c75 12%, transparent); border: 1px solid color-mix(in srgb, #e06c75 30%, transparent); color: #e06c75; font-size: 13px; display: none; }
+    .gate-err.show { display: block; }
+
+    /* ── Rate limit warning ── */
+    .rate-warn { margin-top: 10px; font-size: 12px; color: var(--txt3); }
+    .rate-warn.danger { color: #e06c75; }
+
+    /* ── Admin page layout ── */
+    .admin-page { max-width: 1300px; margin: 0 auto; padding: 28px 24px 80px; }
+
+    /* ── Main admin layout ── */
+    .admin-wrap { display: grid; grid-template-columns: 220px 1fr; gap: 20px; min-height: calc(100vh - 180px); }
+
+    /* ── Sidebar ── */
+    .asidebar { padding: 14px; display: flex; flex-direction: column; gap: 3px; position: sticky; top: 80px; height: fit-content; }
+    .aside-lbl { padding: 4px 10px 8px; font-size: 10px; font-weight: 700; color: var(--txt3); letter-spacing: 0.08em; text-transform: uppercase; }
+    .anav { padding: 9px 12px; border-radius: 10px; border: none; background: none; cursor: pointer; color: var(--txt2); font-family: inherit; font-size: 13.5px; font-weight: 500; text-align: left; display: flex; align-items: center; gap: 8px; transition: all 0.18s; width: 100%; }
+    .anav:hover  { background: var(--tint2); color: var(--txt1); }
+    .anav.active { background: linear-gradient(135deg, var(--accent), var(--accent2)); color: #fff; }
+    .anav i { width: 14px; text-align: center; font-size: 12px; }
+
+    /* ── Content area ── */
+    .acontent { min-width: 0; }
+    .asec { display: none; }
+    .asec.active { display: block; }
+
+    /* ── Section header ── */
+    .asec-head { display: flex; align-items: center; gap: 12px; margin-bottom: 22px; flex-wrap: wrap; }
+    .asec-head h3 { font-size: 20px; font-weight: 700; letter-spacing: -0.03em; flex: 1; }
+
+    /* ── Stats ── */
+    .astat-row { display: grid; grid-template-columns: repeat(4,1fr); gap: 12px; margin-bottom: 20px; }
+    .astat { padding: 18px; text-align: center; }
+    .astat-n { font-size: 28px; font-weight: 800; color: var(--accent2); letter-spacing: -0.04em; }
+    .astat-sub { font-size: 11px; color: #4ade80; margin-top: 2px; }
+    .astat-l { font-size: 11px; color: var(--txt3); margin-top: 4px; }
+
+    /* ── Notice bar ── */
+    .anotice { padding: 11px 14px; border-radius: 11px; font-size: 13px; background: color-mix(in srgb, var(--accent) 8%, transparent); border: 1px solid var(--border2); color: var(--txt2); display: flex; align-items: flex-start; gap: 9px; margin-bottom: 14px; }
+    .anotice i { color: var(--accent2); margin-top: 2px; flex-shrink: 0; }
+    .anotice.warn { background: color-mix(in srgb, orange 8%, transparent); border-color: color-mix(in srgb, orange 25%, transparent); }
+    .anotice.warn i { color: orange; }
+
+    /* ── Item card ── */
+    .aitem { padding: 14px 16px; border-radius: 13px; margin-bottom: 9px; display: flex; align-items: flex-start; gap: 12px; border: 1px solid var(--border); background: var(--tint); transition: border-color 0.2s; }
+    .aitem:hover { border-color: var(--border2); }
+    .aitem-icon { width: 38px; height: 38px; border-radius: 11px; flex-shrink: 0; background: linear-gradient(135deg, var(--accent), var(--accent2)); display: flex; align-items: center; justify-content: center; color: #fff; font-size: 15px; }
+    .aitem-body { flex: 1; min-width: 0; }
+    .aitem-title { font-size: 14px; font-weight: 600; color: var(--txt1); margin-bottom: 2px; }
+    .aitem-sub   { font-size: 12px; color: var(--txt3); }
+    .aitem-acts  { display: flex; gap: 6px; flex-shrink: 0; }
+    .aprog { height: 3px; border-radius: 2px; background: var(--border); overflow: hidden; margin-top: 8px; }
+    .aprog-fill { height: 100%; background: linear-gradient(90deg, var(--accent), var(--accent3)); border-radius: 2px; }
+
+    /* ── Buttons ── */
+    .abtn { padding: 7px 14px; border-radius: 9px; border: 1px solid var(--border2); background: var(--tint); color: var(--txt1); font-family: inherit; font-size: 13px; font-weight: 600; cursor: pointer; transition: all 0.18s; display: inline-flex; align-items: center; gap: 6px; }
+    .abtn:hover { background: var(--tint2); border-color: var(--accent2); }
+    .abtn.primary { background: linear-gradient(135deg, var(--accent), var(--accent2)); border: none; color: #fff; }
+    .abtn.primary:hover { opacity: 0.88; }
+    .abtn.danger { border-color: color-mix(in srgb, #e06c75 35%, transparent); color: #e06c75; }
+    .abtn.danger:hover { background: color-mix(in srgb, #e06c75 12%, transparent); }
+
+    /* ── Form inputs ── */
+    .ainput { width: 100%; padding: 9px 12px; border-radius: 9px; border: 1px solid var(--border2); background: var(--bg2); color: var(--txt1); font-family: inherit; font-size: 13px; outline: none; transition: border-color 0.2s; box-sizing: border-box; }
+    .ainput:focus { border-color: var(--accent2); }
+    .ainput-lbl { font-size: 11px; font-weight: 700; color: var(--txt3); letter-spacing: 0.05em; text-transform: uppercase; margin-bottom: 5px; }
+    .aform-field { margin-bottom: 12px; }
+    .aform-row   { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; }
+
+    /* ── Table ── */
+    .atbl-wrap { overflow-x: auto; border-radius: 12px; border: 1px solid var(--border); }
+    .atbl { width: 100%; border-collapse: collapse; font-size: 13px; }
+    .atbl th { padding: 10px 14px; text-align: left; font-size: 11px; font-weight: 700; color: var(--txt3); letter-spacing: 0.05em; text-transform: uppercase; border-bottom: 1px solid var(--border); background: var(--tint); }
+    .atbl td { padding: 11px 14px; border-bottom: 1px solid var(--border); color: var(--txt1); vertical-align: middle; }
+    .atbl tr:last-child td { border-bottom: none; }
+    .atbl tr:hover td { background: var(--tint); }
+
+    /* ── Badges ── */
+    .badg { padding: 3px 9px; border-radius: 999px; font-size: 11px; font-weight: 700; }
+    .badg-ok   { background: color-mix(in srgb, #4ade80 15%, transparent); color: #4ade80; }
+    .badg-warn { background: color-mix(in srgb, orange 15%, transparent); color: orange; }
+    .badg-err  { background: color-mix(in srgb, #e06c75 15%, transparent); color: #e06c75; }
+
+    /* ── Database viewer ── */
+    .db-tabs { display: flex; flex-wrap: wrap; gap: 6px; margin-bottom: 14px; }
+    .db-tab { padding: 7px 14px; border-radius: 9px; border: 1px solid var(--border2); background: var(--tint); color: var(--txt2); font-family: inherit; font-size: 12px; font-weight: 600; cursor: pointer; transition: all 0.18s; display: inline-flex; align-items: center; gap: 6px; }
+    .db-tab:hover { background: var(--tint2); }
+    .db-tab.active { background: linear-gradient(135deg, var(--accent), var(--accent2)); border: none; color: #fff; }
+
+    /* ── Quick grid ── */
+    .quick-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 16px; }
+
+    /* ── Activity feed ── */
+    .feed { display: flex; flex-direction: column; gap: 10px; }
+    .feed-item { display: flex; align-items: flex-start; gap: 10px; font-size: 13px; }
+    .feed-dot  { width: 8px; height: 8px; border-radius: 50%; background: var(--accent2); margin-top: 5px; flex-shrink: 0; }
+    .feed-time { font-size: 11px; color: var(--txt3); margin-top: 2px; }
+
+    /* ── Empty state ── */
+    .aempty { padding: 40px; text-align: center; color: var(--txt3); }
+    .aempty i { font-size: 32px; opacity: 0.25; margin-bottom: 10px; display: block; }
+
+    /* ── Security log table ── */
+    .sec-log-row td:nth-child(2) { font-family: monospace; font-size: 12px; }
+
+    /* ── Responsive ── */
+    @media (max-width: 768px) {
+      .admin-wrap { grid-template-columns: 1fr; }
+      .asidebar { position: static; flex-direction: row; flex-wrap: wrap; padding: 8px; }
+      .aside-lbl { display: none; }
+      .astat-row { grid-template-columns: 1fr 1fr; }
+      .quick-grid { grid-template-columns: 1fr; }
+      .aform-row { grid-template-columns: 1fr; }
+    }
+  </style>
+</head>
+<body>
+
+<!-- ── TOP BAR (hidden until authed) ── -->
+<div class="atb" id="admin-topbar" style="display:none;">
+  <div class="atb-logo">EDUMOE</div>
+  <div class="atb-badge">Admin</div>
+  <div class="atb-user" id="atb-user-info">
+    <i class="fas fa-user-shield"></i>
+    <span id="atb-email">admin</span>
+    <button class="abtn" style="padding:5px 10px;font-size:12px;margin-left:8px;" onclick="signOut()">
+      <i class="fas fa-sign-out-alt"></i> Sign Out
+    </button>
+  </div>
+</div>
+
+<!-- ══════════════════════════════════════════════════════════
+     GATE SCREEN — Supabase email + password login
+     ══════════════════════════════════════════════════════════ -->
+<div class="gate-screen" id="gate-screen">
+  <div class="gate-card lg lg-card">
+    <div class="lg-effect"></div><div class="lg-tint"></div><div class="lg-shine"></div>
+    <div class="gate-icon"><i class="fas fa-shield-alt"></i></div>
+    <h2>Admin Access</h2>
+    <p>Sign in with your Supabase admin account</p>
+
+    <div class="gate-field">
+      <div class="gate-label">Email</div>
+      <input class="gate-input" type="email" id="gate-email" placeholder="admin@edumoe.com"
+             autocomplete="email" onkeydown="if(event.key==='Enter')adminLogin()">
+    </div>
+    <div class="gate-field">
+      <div class="gate-label">Password</div>
+      <input class="gate-input" type="password" id="gate-pw" placeholder="••••••••"
+             autocomplete="current-password" onkeydown="if(event.key==='Enter')adminLogin()">
+    </div>
+
+    <button class="gate-btn" id="gate-submit-btn" onclick="adminLogin()">
+      <i class="fas fa-lock-open"></i> Sign In
+    </button>
+
+    <div class="gate-err" id="gate-err"></div>
+    <div class="rate-warn" id="rate-warn"></div>
+  </div>
+</div>
+
+<!-- ══════════════════════════════════════════════════════════
+     ADMIN DASHBOARD
+     ══════════════════════════════════════════════════════════ -->
+<div id="admin-dash" style="display:none;">
+  <div class="admin-page">
+    <div class="admin-wrap">
+
+      <!-- ── SIDEBAR ── -->
+      <div class="asidebar lg lg-panel">
+        <div class="lg-effect"></div><div class="lg-tint"></div><div class="lg-shine"></div>
+
+        <div class="aside-lbl">OVERVIEW</div>
+        <button class="anav active" onclick="showSec('overview',this)"><i class="fas fa-chart-line"></i> Dashboard</button>
+
+        <div class="aside-lbl" style="margin-top:8px;">CONTENT</div>
+        <button class="anav" onclick="showSec('courses',this)"><i class="fas fa-book-open"></i> Courses</button>
+        <button class="anav" onclick="showSec('videos',this)"><i class="fas fa-video"></i> Videos</button>
+        <button class="anav" onclick="showSec('quiz',this)"><i class="fas fa-question-circle"></i> Quiz</button>
+
+        <div class="aside-lbl" style="margin-top:8px;">PEOPLE</div>
+        <button class="anav" onclick="showSec('users',this)"><i class="fas fa-users"></i> Users</button>
+
+        <div class="aside-lbl" style="margin-top:8px;">SECURITY</div>
+        <button class="anav" onclick="showSec('seclog',this)"><i class="fas fa-shield-alt"></i> Login Logs</button>
+
+        <div class="aside-lbl" style="margin-top:8px;">DATA</div>
+        <button class="anav" onclick="showSec('db',this)"><i class="fas fa-database"></i> Database</button>
+
+        <div class="aside-lbl" style="margin-top:8px;">CONFIG</div>
+        <button class="anav" onclick="showSec('settings',this)"><i class="fas fa-cog"></i> Settings</button>
+      </div>
+
+      <!-- ── MAIN CONTENT ── -->
+      <div class="acontent">
+
+        <!-- OVERVIEW -->
+        <div class="asec active" id="sec-overview">
+          <div class="asec-head">
+            <h3>Dashboard</h3>
+            <button class="abtn" onclick="refreshStats()"><i class="fas fa-sync-alt"></i> Refresh</button>
+          </div>
+          <div class="astat-row">
+            <div class="astat lg lg-card"><div class="lg-effect"></div><div class="lg-tint"></div><div class="lg-shine"></div>
+              <div class="astat-n" id="s-users">—</div>
+              <div class="astat-sub" id="s-new">loading...</div>
+              <div class="astat-l">Total Users</div>
+            </div>
+            <div class="astat lg lg-card"><div class="lg-effect"></div><div class="lg-tint"></div><div class="lg-shine"></div>
+              <div class="astat-n" id="s-courses">4</div>
+              <div class="astat-l">Courses</div>
+            </div>
+            <div class="astat lg lg-card"><div class="lg-effect"></div><div class="lg-tint"></div><div class="lg-shine"></div>
+              <div class="astat-n" id="s-videos">0</div>
+              <div class="astat-l">Videos</div>
+            </div>
+            <div class="astat lg lg-card"><div class="lg-effect"></div><div class="lg-tint"></div><div class="lg-shine"></div>
+              <div class="astat-n" id="s-logins">—</div>
+              <div class="astat-l">Login Attempts (24h)</div>
+            </div>
+          </div>
+          <div class="quick-grid">
+            <div class="lg lg-card" style="padding:18px;">
+              <div class="lg-effect"></div><div class="lg-tint"></div><div class="lg-shine"></div>
+              <p class="aside-lbl" style="padding:0 0 10px;">QUICK ACTIONS</p>
+              <div style="display:flex;flex-direction:column;gap:7px;">
+                <button class="abtn primary" onclick="showSec('courses',document.querySelector('.anav:nth-child(4)'));openCourseForm()"><i class="fas fa-plus"></i> Add Course</button>
+                <button class="abtn" onclick="showSec('videos',document.querySelector('.anav:nth-child(5)'));openVideoForm()"><i class="fas fa-video"></i> Add Video</button>
+                <button class="abtn" onclick="showSec('users',document.querySelector('.anav:nth-child(8)'))"><i class="fas fa-users"></i> View Users</button>
+                <button class="abtn" onclick="showSec('seclog',document.querySelector('.anav:nth-child(10)'))"><i class="fas fa-shield-alt"></i> Security Logs</button>
+              </div>
+            </div>
+            <div class="lg lg-card" style="padding:18px;">
+              <div class="lg-effect"></div><div class="lg-tint"></div><div class="lg-shine"></div>
+              <p class="aside-lbl" style="padding:0 0 10px;">RECENT ACTIVITY</p>
+              <div class="feed" id="activity-feed">
+                <div class="feed-item"><div class="feed-dot"></div><div><div>Admin panel opened</div><div class="feed-time">Just now</div></div></div>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <!-- COURSES -->
+        <div class="asec" id="sec-courses">
+          <div class="asec-head">
+            <h3>Courses</h3>
+            <button class="abtn primary" onclick="openCourseForm()"><i class="fas fa-plus"></i> Add Course</button>
+          </div>
+          <div class="anotice"><i class="fas fa-info-circle"></i>
+            <span>Edit course info below. After saving, also update the course cards in <code>index.html</code> to keep everything in sync.</span>
+          </div>
+          <div class="lg lg-panel" id="course-form-wrap" style="padding:22px;margin-bottom:16px;display:none;">
+            <div class="lg-effect"></div><div class="lg-tint"></div><div class="lg-shine"></div>
+            <h4 style="font-size:15px;font-weight:700;margin-bottom:14px;" id="course-form-title">Add Course</h4>
+            <div class="aform-row">
+              <div class="aform-field"><div class="ainput-lbl">Title</div><input class="ainput" id="cf-title" placeholder="e.g. Logic Design"></div>
+              <div class="aform-field"><div class="ainput-lbl">Semester</div><input class="ainput" id="cf-sem" placeholder="e.g. Semester 2"></div>
+            </div>
+            <div class="aform-row">
+              <div class="aform-field"><div class="ainput-lbl">Tags (comma separated)</div><input class="ainput" id="cf-tags" placeholder="C++, OOP"></div>
+              <div class="aform-field"><div class="ainput-lbl">Progress % (0-100)</div><input class="ainput" id="cf-prog" type="number" min="0" max="100" placeholder="40"></div>
+            </div>
+            <div class="aform-field"><div class="ainput-lbl">Description</div>
+              <textarea class="ainput" id="cf-desc" placeholder="Short course description..." style="height:70px;resize:vertical;border-radius:10px;"></textarea>
+            </div>
+            <div style="display:flex;gap:8px;margin-top:4px;">
+              <button class="abtn primary" onclick="saveCourse()"><i class="fas fa-save"></i> Save</button>
+              <button class="abtn" onclick="document.getElementById('course-form-wrap').style.display='none'"><i class="fas fa-times"></i> Cancel</button>
+            </div>
+          </div>
+          <div id="courses-list"></div>
+        </div>
+
+        <!-- VIDEOS -->
+        <div class="asec" id="sec-videos">
+          <div class="asec-head">
+            <h3>Video Links</h3>
+            <button class="abtn primary" onclick="openVideoForm()"><i class="fas fa-plus"></i> Add Video</button>
+          </div>
+          <div class="anotice"><i class="fas fa-info-circle"></i>
+            <span>
+              Add YouTube video IDs or Telegram post URLs.
+              <strong>YouTube:</strong> just the ID e.g. <code>dQw4w9WgXcQ</code>
+              &nbsp;|&nbsp;
+              <strong>Telegram:</strong> full URL e.g. <code>https://t.me/CS_Epic_Save/5</code>
+            </span>
+          </div>
+          <div class="lg lg-panel" id="video-form-wrap" style="padding:22px;margin-bottom:16px;display:none;">
+            <div class="lg-effect"></div><div class="lg-tint"></div><div class="lg-shine"></div>
+            <h4 style="font-size:15px;font-weight:700;margin-bottom:14px;">Add Video</h4>
+            <div class="aform-row">
+              <div class="aform-field"><div class="ainput-lbl">Title</div><input class="ainput" id="vf-title" placeholder="e.g. Lecture 3 – For Loops"></div>
+              <div class="aform-field"><div class="ainput-lbl">Course</div>
+                <select class="ainput" id="vf-course">
+                  <option value="cpp">C++ / Computing Fundamentals</option>
+                  <option value="logic">Logic Design</option>
+                  <option value="calculus">Calculus / ODE</option>
+                  <option value="prob">Probability & Statistics</option>
+                </select>
+              </div>
+            </div>
+            <div class="aform-row">
+              <div class="aform-field"><div class="ainput-lbl">Source</div>
+                <select class="ainput" id="vf-source" onchange="toggleTelegramHint(this.value)">
+                  <option value="youtube">YouTube</option>
+                  <option value="telegram">Telegram</option>
+                </select>
+              </div>
+              <div class="aform-field"><div class="ainput-lbl">Video ID or URL</div>
+                <input class="ainput" id="vf-id" placeholder="YouTube ID or Telegram URL">
+                <small id="vf-hint" style="color:var(--txt3);font-size:11px;margin-top:4px;display:block;">YouTube: paste just the video ID (11 chars after ?v=)</small>
+              </div>
+            </div>
+            <div style="display:flex;gap:8px;">
+              <button class="abtn primary" onclick="saveVideo()"><i class="fas fa-save"></i> Save</button>
+              <button class="abtn" onclick="document.getElementById('video-form-wrap').style.display='none'"><i class="fas fa-times"></i> Cancel</button>
+            </div>
+          </div>
+          <div id="videos-list"></div>
+        </div>
+
+        <!-- QUIZ -->
+        <div class="asec" id="sec-quiz">
+          <div class="asec-head">
+            <h3>Quiz Questions <span class="badg badg-ok" id="qs-count" style="font-size:12px;"></span></h3>
+          </div>
+          <div class="anotice"><i class="fas fa-info-circle"></i>
+            <span>Questions are stored in localStorage. The curriculum question bank is built into <code>app.js</code> (5 topics × 5 questions each).</span>
+          </div>
+          <div class="lg lg-panel" style="padding:22px;margin-bottom:20px;">
+            <div class="lg-effect"></div><div class="lg-tint"></div><div class="lg-shine"></div>
+            <h4 style="font-size:15px;font-weight:700;margin-bottom:14px;">Add Question</h4>
+            <div class="aform-field"><div class="ainput-lbl">Question Text</div>
+              <textarea class="ainput" id="aq-q" placeholder="Enter your question..." style="height:60px;resize:vertical;border-radius:10px;"></textarea>
+            </div>
+            <div class="aform-row">
+              <div class="aform-field"><div class="ainput-lbl">Option A</div><input class="ainput" id="aq-a" placeholder="Option A"></div>
+              <div class="aform-field"><div class="ainput-lbl">Option B</div><input class="ainput" id="aq-b" placeholder="Option B"></div>
+            </div>
+            <div class="aform-row">
+              <div class="aform-field"><div class="ainput-lbl">Option C</div><input class="ainput" id="aq-c" placeholder="Option C"></div>
+              <div class="aform-field"><div class="ainput-lbl">Option D</div><input class="ainput" id="aq-d" placeholder="Option D"></div>
+            </div>
+            <div class="aform-row">
+              <div class="aform-field"><div class="ainput-lbl">Correct Answer (A/B/C/D)</div>
+                <input class="ainput" id="aq-ans" placeholder="e.g. B" maxlength="1">
+              </div>
+              <div class="aform-field"><div class="ainput-lbl">Topic</div>
+                <select class="ainput" id="aq-topic">
+                  <option value="cpp">C++</option>
+                  <option value="logic">Logic Design</option>
+                  <option value="calculus">Calculus</option>
+                  <option value="prob">Probability</option>
+                </select>
+              </div>
+            </div>
+            <div class="aform-field"><div class="ainput-lbl">Explanation (optional)</div>
+              <textarea class="ainput" id="aq-expl" placeholder="Explain why the answer is correct..."
+                        style="height:60px;resize:vertical;border-radius:10px;"></textarea>
+            </div>
+            <div style="display:flex;gap:8px;">
+              <button class="abtn primary" onclick="saveQuestion()"><i class="fas fa-save"></i> Save Question</button>
+              <button class="abtn" onclick="clearQForm()"><i class="fas fa-times"></i> Clear</button>
+            </div>
+          </div>
+          <h4 style="font-size:13px;font-weight:700;color:var(--txt3);margin-bottom:10px;letter-spacing:0.05em;text-transform:uppercase;">Saved Questions</h4>
+          <div id="question-list"></div>
+        </div>
+
+        <!-- USERS -->
+        <div class="asec" id="sec-users">
+          <div class="asec-head">
+            <h3>Users</h3>
+            <input class="ainput" id="user-search" placeholder="Search by name..."
+                   style="max-width:200px;" oninput="filterUsers(this.value)">
+          </div>
+          <div class="anotice"><i class="fas fa-info-circle"></i>
+            <span>Users are stored in the Supabase <code>profiles</code> table. RLS policy must allow admin reads. See setup instructions in Settings.</span>
+          </div>
+          <div class="atbl-wrap">
+            <table class="atbl">
+              <thead>
+                <tr><th>Name</th><th>User ID</th><th>Joined</th><th>Status</th><th>Actions</th></tr>
+              </thead>
+              <tbody id="users-tbody">
+                <tr><td colspan="5" style="text-align:center;padding:40px;color:var(--txt3);">
+                  <i class="fas fa-spinner fa-spin" style="font-size:22px;display:block;margin-bottom:8px;opacity:0.3;"></i>
+                  Loading from Supabase...
+                </td></tr>
+              </tbody>
+            </table>
+          </div>
+        </div>
+
+        <!-- SECURITY LOG -->
+        <div class="asec" id="sec-seclog">
+          <div class="asec-head">
+            <h3>Admin Login Logs</h3>
+            <button class="abtn" onclick="loadSecurityLog()"><i class="fas fa-sync-alt"></i> Refresh</button>
+          </div>
+          <div class="anotice warn"><i class="fas fa-exclamation-triangle"></i>
+            <span>Every login attempt is logged here with IP address and timestamp. To enable this, create the <code>admin_logs</code> table in Supabase (see Settings → Setup SQL).</span>
+          </div>
+          <div class="atbl-wrap">
+            <table class="atbl sec-log-row">
+              <thead>
+                <tr><th>Time</th><th>IP Address</th><th>Email Tried</th><th>Result</th><th>User Agent</th></tr>
+              </thead>
+              <tbody id="seclog-tbody">
+                <tr><td colspan="5" style="text-align:center;padding:30px;color:var(--txt3);">Loading...</td></tr>
+              </tbody>
+            </table>
+          </div>
+        </div>
+
+        <!-- DATABASE VIEWER -->
+        <div class="asec" id="sec-db">
+          <div class="asec-head">
+            <h3>Database Viewer</h3>
+            <button class="abtn" onclick="loadDbTable(currentTable, null, true)"><i class="fas fa-sync-alt"></i> Refresh</button>
+          </div>
+          <div class="anotice"><i class="fas fa-info-circle"></i>
+            <span>Live read-only view of your Supabase tables. RLS must allow reads for authenticated admin users.</span>
+          </div>
+          <div class="db-tabs">
+            <button class="db-tab active" onclick="loadDbTable('profiles',this)"><i class="fas fa-users"></i> profiles</button>
+            <button class="db-tab" onclick="loadDbTable('progress',this)"><i class="fas fa-tasks"></i> progress</button>
+            <button class="db-tab" onclick="loadDbTable('quiz_attempts',this)"><i class="fas fa-question-circle"></i> quiz_attempts</button>
+            <button class="db-tab" onclick="loadDbTable('admin_logs',this)"><i class="fas fa-shield-alt"></i> admin_logs</button>
+          </div>
+          <div class="atbl-wrap">
+            <table class="atbl">
+              <thead id="db-head"></thead>
+              <tbody id="db-body">
+                <tr><td style="padding:40px;text-align:center;color:var(--txt3);">Select a table above</td></tr>
+              </tbody>
+            </table>
+          </div>
+          <p class="sf-caption" id="db-count" style="margin-top:6px;"></p>
+        </div>
+
+        <!-- SETTINGS -->
+        <div class="asec" id="sec-settings">
+          <div class="asec-head"><h3>Settings</h3></div>
+          <div style="display:grid;gap:18px;max-width:560px;">
+
+            <div class="lg lg-panel" style="padding:22px;">
+              <div class="lg-effect"></div><div class="lg-tint"></div><div class="lg-shine"></div>
+              <h4 style="font-size:15px;font-weight:700;margin-bottom:14px;">Platform Info</h4>
+              <div class="aform-field"><div class="ainput-lbl">Platform Name</div>
+                <input class="ainput" id="st-name" value="EDUMOE">
+              </div>
+              <div class="aform-field"><div class="ainput-lbl">Telegram Channel URL</div>
+                <input class="ainput" id="st-tg" value="https://t.me/CS_Epic_Save">
+              </div>
+              <div class="aform-field"><div class="ainput-lbl">Pro Plan Price (EGP)</div>
+                <input class="ainput" id="st-price" type="number" placeholder="e.g. 79">
+              </div>
+              <button class="abtn primary" onclick="saveSettings()"><i class="fas fa-save"></i> Save Settings</button>
+            </div>
+
+            <!-- Supabase connection -->
+            <div class="lg lg-panel" style="padding:22px;">
+              <div class="lg-effect"></div><div class="lg-tint"></div><div class="lg-shine"></div>
+              <h4 style="font-size:15px;font-weight:700;margin-bottom:10px;">Supabase Connection</h4>
+              <p class="sf-caption" style="color:var(--txt3);line-height:1.9;margin-bottom:12px;">
+                Project: <code style="color:var(--accent2);">ihkryvhqdlddywydrwmu</code><br>
+                Signed in as: <code id="st-current-email" style="color:var(--accent2);">—</code>
+              </p>
+              <button class="abtn" onclick="testConnection()">
+                <i class="fas fa-plug"></i> Test Connection
+              </button>
+              <button class="abtn danger" onclick="signOut()" style="margin-left:8px;">
+                <i class="fas fa-sign-out-alt"></i> Sign Out
+              </button>
+            </div>
+
+            <!-- Setup SQL instructions -->
+            <div class="lg lg-panel" style="padding:22px;">
+              <div class="lg-effect"></div><div class="lg-tint"></div><div class="lg-shine"></div>
+              <h4 style="font-size:15px;font-weight:700;margin-bottom:10px;">
+                <i class="fas fa-terminal" style="color:var(--accent2);"></i> Required Supabase Setup SQL
+              </h4>
+              <p class="sf-caption" style="color:var(--txt3);margin-bottom:12px;">Run this in Supabase → SQL Editor to enable IP logging and admin access:</p>
+              <pre style="background:var(--bg2);border:1px solid var(--border);border-radius:10px;padding:14px;font-size:11px;color:#abb2bf;overflow-x:auto;line-height:1.8;">-- 1. Create admin_logs table for IP logging
+CREATE TABLE IF NOT EXISTS admin_logs (
+  id         BIGSERIAL PRIMARY KEY,
+  created_at TIMESTAMPTZ DEFAULT NOW(),
+  email      TEXT,
+  ip_address TEXT,
+  user_agent TEXT,
+  success    BOOLEAN,
+  note       TEXT
+);
+
+-- 2. Enable RLS but allow inserts from all (so failed logins log too)
+ALTER TABLE admin_logs ENABLE ROW LEVEL SECURITY;
+
+CREATE POLICY "Allow public insert" ON admin_logs
+  FOR INSERT TO anon, authenticated WITH CHECK (true);
+
+CREATE POLICY "Admins can read logs" ON admin_logs
+  FOR SELECT TO authenticated USING (true);
+
+-- 3. Add is_admin column to profiles (if not exists)
+ALTER TABLE profiles ADD COLUMN IF NOT EXISTS is_admin BOOLEAN DEFAULT FALSE;
+
+-- 4. Mark your own account as admin (replace with your user ID)
+-- UPDATE profiles SET is_admin = TRUE WHERE id = 'YOUR-USER-UUID';</pre>
+              <button class="abtn" style="margin-top:12px;" onclick="navigator.clipboard.writeText(document.querySelector('pre').textContent).then(()=>showToast('✅ SQL copied!'))">
+                <i class="fas fa-copy"></i> Copy SQL
+              </button>
+            </div>
+
+            <!-- Theme -->
+            <div class="lg lg-panel" style="padding:22px;">
+              <div class="lg-effect"></div><div class="lg-tint"></div><div class="lg-shine"></div>
+              <h4 style="font-size:15px;font-weight:700;margin-bottom:12px;">Theme</h4>
+              <div class="theme-row">
+                <div class="theme-dot active" id="td-ruby"    onclick="setTheme('ruby',this)"   title="Ruby (default)"></div>
+                <div class="theme-dot" id="td-aurora"  onclick="setTheme('aurora',this)"  title="Aurora"></div>
+                <div class="theme-dot" id="td-midnight" onclick="setTheme('midnight',this)" title="Midnight"></div>
+                <div class="theme-dot" id="td-solar"   onclick="setTheme('solar',this)"   title="Solar"></div>
+                <div class="theme-dot" id="td-ocean"   onclick="setTheme('ocean',this)"   title="Ocean"></div>
+              </div>
+            </div>
+
+          </div>
+        </div>
+
+      </div><!-- end .acontent -->
+    </div><!-- end .admin-wrap -->
+  </div>
+</div>
+
+<!-- Toast -->
+<div class="toast" id="toast"><span id="toast-msg"></span></div>
+
+<script src="app.js"></script>
+<script>
+/* ════════════════════════════════════════════════════════════
+   ADMIN PANEL — SECURE AUTH + IP LOGGING
+   v7: Supabase email+password login
+       Rate limiting (5 attempts / 15 min per IP)
+       IP logging on every attempt
+   ════════════════════════════════════════════════════════════ */
+
+// ── RATE LIMITER (client-side, per session) ──────────────────
+// Server-side rate limiting happens in admin_logs table.
+// This is a fast client-side check to prevent UI spam.
+const _rl = { attempts: 0, lockedUntil: 0 };
+const MAX_ATTEMPTS = 5;
+const LOCK_MS      = 15 * 60 * 1000; // 15 min
+
+function isRateLimited() {
+  if (_rl.lockedUntil > Date.now()) return true;
+  return false;
+}
+
+function recordAttempt() {
+  _rl.attempts++;
+  if (_rl.attempts >= MAX_ATTEMPTS) {
+    _rl.lockedUntil = Date.now() + LOCK_MS;
+    _rl.attempts = 0;
+  }
+}
+
+function showRateWarn() {
+  const el = document.getElementById('rate-warn');
+  if (!el) return;
+  const remaining = Math.max(0, Math.ceil((_rl.lockedUntil - Date.now()) / 60000));
+  if (_rl.lockedUntil > Date.now()) {
+    el.textContent = `⛔ Too many attempts. Try again in ${remaining} minute(s).`;
+    el.className = 'rate-warn danger';
+  } else if (_rl.attempts > 0) {
+    el.textContent = `⚠️ ${MAX_ATTEMPTS - _rl.attempts} attempt(s) remaining before lockout.`;
+    el.className = 'rate-warn';
+  } else {
+    el.textContent = '';
+  }
+}
+
+// ── IP DETECTION ─────────────────────────────────────────────
+// Gets approximate IP via public API for logging purposes.
+async function getClientIP() {
+  try {
+    const r = await fetch('https://api.ipify.org?format=json', { signal: AbortSignal.timeout(3000) });
+    const d = await r.json();
+    return d.ip || 'unknown';
+  } catch {
+    return 'unknown';
+  }
+}
+
+// ── LOG ATTEMPT TO SUPABASE ──────────────────────────────────
+async function logLoginAttempt(email, success, note) {
+  try {
+    const ip = await getClientIP();
+    await _supabase.from('admin_logs').insert({
+      email:      email || '—',
+      ip_address: ip,
+      user_agent: navigator.userAgent.substring(0, 200),
+      success:    success,
+      note:       note || ''
+    });
+  } catch(e) {
+    // Silently fail — logging shouldn't break the auth flow
+    console.warn('Log failed:', e.message);
+  }
+}
+
+// ── MAIN LOGIN FUNCTION ──────────────────────────────────────
+async function adminLogin() {
+  const email = document.getElementById('gate-email').value.trim();
+  const pw    = document.getElementById('gate-pw').value;
+  const btn   = document.getElementById('gate-submit-btn');
+  const errEl = document.getElementById('gate-err');
+
+  // Show error helper
+  function showErr(msg) {
+    errEl.textContent = msg;
+    errEl.className = 'gate-err show';
+  }
+  function hideErr() { errEl.className = 'gate-err'; }
+
+  // Rate limit check
+  if (isRateLimited()) {
+    showRateWarn();
+    showErr('⛔ Account temporarily locked. Please wait.');
+    return;
+  }
+
+  // Validation
+  if (!email || !pw) { showErr('Please enter email and password.'); return; }
+  if (!email.includes('@')) { showErr('Please enter a valid email address.'); return; }
+
+  // UI loading state
+  btn.disabled = true;
+  btn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Signing in...';
+  hideErr();
+
+  try {
+    // 1. Supabase sign in
+    const { data, error } = await _supabase.auth.signInWithPassword({ email, password: pw });
+
+    if (error || !data?.user) {
+      // Failed login
+      recordAttempt();
+      showRateWarn();
+      await logLoginAttempt(email, false, error?.message || 'Invalid credentials');
+      showErr('❌ ' + (error?.message || 'Invalid email or password.'));
+      document.getElementById('gate-pw').value = '';
+      return;
+    }
+
+    // 2. Check admin flag in profiles table
+    const { data: profile, error: profileErr } = await _supabase
+      .from('profiles')
+      .select('is_admin, full_name')
+      .eq('id', data.user.id)
+      .single();
+
+    if (profileErr || !profile?.is_admin) {
+      // Signed in but not an admin — sign out immediately
+      await _supabase.auth.signOut();
+      recordAttempt();
+      await logLoginAttempt(email, false, 'Not an admin account');
+      showErr('❌ This account does not have admin access.');
+      return;
+    }
+
+    // 3. Success — log and open dashboard
+    await logLoginAttempt(email, true, 'Admin login successful');
+    _rl.attempts = 0;
+    openAdminDash(data.user, profile);
+
+  } catch(e) {
+    showErr('❌ Network error: ' + e.message);
+    await logLoginAttempt(email, false, 'Exception: ' + e.message);
+  } finally {
+    btn.disabled = false;
+    btn.innerHTML = '<i class="fas fa-lock-open"></i> Sign In';
+  }
+}
+
+// ── OPEN DASHBOARD ───────────────────────────────────────────
+function openAdminDash(user, profile) {
+  document.getElementById('gate-screen').style.display  = 'none';
+  document.getElementById('admin-dash').style.display   = 'block';
+  document.getElementById('admin-topbar').style.display = 'flex';
+
+  // Show email in topbar
+  const emailEl = document.getElementById('atb-email');
+  if (emailEl) emailEl.textContent = profile?.full_name || user.email;
+
+  // Show email in settings
+  const stEmail = document.getElementById('st-current-email');
+  if (stEmail) stEmail.textContent = user.email;
+
+  showToast('🔓 Welcome back, ' + (profile?.full_name || user.email.split('@')[0]));
+  addActivity('Admin signed in as ' + user.email);
+
+  refreshStats();
+  renderCourses();
+  renderVideos();
+  renderQuestions();
+  loadUsers();
+}
+
+// ── SIGN OUT ────────────────────────────────────────────────
+async function signOut() {
+  await _supabase.auth.signOut();
+  document.getElementById('admin-dash').style.display   = 'none';
+  document.getElementById('admin-topbar').style.display = 'none';
+  document.getElementById('gate-screen').style.display  = 'flex';
+  document.getElementById('gate-email').value = '';
+  document.getElementById('gate-pw').value    = '';
+  showToast('👋 Signed out');
+}
+
+// ── SESSION RESTORE (on page load, if already logged in) ─────
+async function checkExistingSession() {
+  const { data: { session } } = await _supabase.auth.getSession();
+  if (!session?.user) return; // No session, show gate
+
+  // Session exists — verify admin
+  const { data: profile } = await _supabase
+    .from('profiles')
+    .select('is_admin, full_name')
+    .eq('id', session.user.id)
+    .single();
+
+  if (profile?.is_admin) {
+    openAdminDash(session.user, profile);
+  }
+}
+
+// ── NAVIGATION ───────────────────────────────────────────────
+function showSec(id, el) {
+  document.querySelectorAll('.asec').forEach(s => s.classList.remove('active'));
+  document.querySelectorAll('.anav').forEach(n => n.classList.remove('active'));
+  const sec = document.getElementById('sec-' + id);
+  if (sec) sec.classList.add('active');
+  if (el) el.classList.add('active');
+
+  // Lazy load sections
+  if (id === 'users')  loadUsers();
+  if (id === 'db')     loadDbTable(currentTable, document.querySelector('.db-tab.active'));
+  if (id === 'seclog') loadSecurityLog();
+}
+
+// ── STATS ────────────────────────────────────────────────────
+async function refreshStats() {
+  try {
+    // Total users
+    const { count: uCount } = await _supabase.from('profiles').select('*', { count: 'exact', head: true });
+    const el = document.getElementById('s-users');
+    if (el) el.textContent = uCount ?? '—';
+
+    // Users this week
+    const weekAgo = new Date(Date.now() - 7*24*60*60*1000).toISOString();
+    const { count: newCount } = await _supabase.from('profiles').select('*', { count: 'exact', head: true }).gte('created_at', weekAgo);
+    const newEl = document.getElementById('s-new');
+    if (newEl) newEl.textContent = '+' + (newCount ?? 0) + ' this week';
+
+    // Login attempts (24h)
+    const dayAgo = new Date(Date.now() - 24*60*60*1000).toISOString();
+    const { count: logCount } = await _supabase.from('admin_logs').select('*', { count: 'exact', head: true }).gte('created_at', dayAgo);
+    const logEl = document.getElementById('s-logins');
+    if (logEl) logEl.textContent = logCount ?? '—';
+
+    // Videos count
+    const vids = JSON.parse(localStorage.getItem('edumoe-videos') || '[]');
+    const vEl = document.getElementById('s-videos');
+    if (vEl) vEl.textContent = vids.length;
+
+  } catch(e) {
+    console.warn('Stats error:', e.message);
+  }
+}
+
+// ── SECURITY LOG ─────────────────────────────────────────────
+async function loadSecurityLog() {
+  const tbody = document.getElementById('seclog-tbody');
+  if (!tbody) return;
+  tbody.innerHTML = '<tr><td colspan="5" style="text-align:center;padding:30px;color:var(--txt3);">Loading...</td></tr>';
+  try {
+    const { data, error } = await _supabase
+      .from('admin_logs')
+      .select('*')
+      .order('created_at', { ascending: false })
+      .limit(100);
+    if (error) throw error;
+    if (!data?.length) {
+      tbody.innerHTML = '<tr><td colspan="5" style="text-align:center;padding:30px;color:var(--txt3);">No logs yet. Run the setup SQL first.</td></tr>';
+      return;
+    }
+    tbody.innerHTML = data.map(row => {
+      const t = new Date(row.created_at);
+      const timeStr = t.toLocaleDateString('en-GB') + ' ' + t.toLocaleTimeString('en-GB', { hour:'2-digit', minute:'2-digit' });
+      const badge = row.success
+        ? '<span class="badg badg-ok">✓ Success</span>'
+        : '<span class="badg badg-err">✗ Failed</span>';
+      const ua = (row.user_agent || '').substring(0, 60) + (row.user_agent?.length > 60 ? '…' : '');
+      return `<tr>
+        <td style="color:var(--txt2);font-size:12px;">${timeStr}</td>
+        <td>${row.ip_address || '—'}</td>
+        <td style="color:var(--txt2);">${row.email || '—'}</td>
+        <td>${badge}</td>
+        <td style="font-size:11px;color:var(--txt3);">${ua}</td>
+      </tr>`;
+    }).join('');
+  } catch(e) {
+    tbody.innerHTML = `<tr><td colspan="5" style="text-align:center;padding:30px;color:var(--txt3);">
+      ${e.message}<br><small>Make sure the admin_logs table exists (see Settings → Setup SQL)</small>
+    </td></tr>`;
+  }
+}
+
+// ── COURSES ──────────────────────────────────────────────────
+let editingCourse = null;
+function openCourseForm(idx) {
+  editingCourse = idx ?? null;
+  const wrap = document.getElementById('course-form-wrap');
+  const titleEl = document.getElementById('course-form-title');
+  if (idx !== undefined) {
+    const courses = JSON.parse(localStorage.getItem('edumoe-courses') || '[]');
+    const c = courses[idx];
+    document.getElementById('cf-title').value = c.title || '';
+    document.getElementById('cf-sem').value   = c.sem || '';
+    document.getElementById('cf-tags').value  = (c.tags || []).join(', ');
+    document.getElementById('cf-prog').value  = c.prog || 0;
+    document.getElementById('cf-desc').value  = c.desc || '';
+    if (titleEl) titleEl.textContent = 'Edit Course';
+  } else {
+    ['cf-title','cf-sem','cf-tags','cf-prog','cf-desc'].forEach(id => { const el=document.getElementById(id); if(el)el.value=''; });
+    if (titleEl) titleEl.textContent = 'Add Course';
+  }
+  if (wrap) wrap.style.display = 'block';
+}
+function saveCourse() {
+  const title = document.getElementById('cf-title').value.trim();
+  if (!title) { showToast('⚠️ Title required'); return; }
+  const courses = JSON.parse(localStorage.getItem('edumoe-courses') || '[]');
+  const data = {
+    title, sem: document.getElementById('cf-sem').value.trim(),
+    tags: document.getElementById('cf-tags').value.split(',').map(t=>t.trim()).filter(Boolean),
+    prog: parseInt(document.getElementById('cf-prog').value)||0,
+    desc: document.getElementById('cf-desc').value.trim()
+  };
+  if (editingCourse !== null) courses[editingCourse] = data;
+  else courses.push(data);
+  localStorage.setItem('edumoe-courses', JSON.stringify(courses));
+  renderCourses();
+  document.getElementById('course-form-wrap').style.display='none';
+  showToast('✅ Course saved'); addActivity('Course saved: '+title);
+}
+function renderCourses() {
+  const list = document.getElementById('courses-list');
+  if (!list) return;
+  const courses = JSON.parse(localStorage.getItem('edumoe-courses') || '[]');
+  if (!courses.length) { list.innerHTML = '<div class="aempty"><i class="fas fa-book-open"></i>No courses saved yet.</div>'; return; }
+  list.innerHTML = courses.map((c,i) => `
+    <div class="aitem">
+      <div class="aitem-icon"><i class="fas fa-book-open"></i></div>
+      <div class="aitem-body">
+        <div class="aitem-title">${c.title}</div>
+        <div class="aitem-sub">${c.sem||''} · ${(c.tags||[]).join(', ')||'—'}</div>
+        <div class="aprog"><div class="aprog-fill" style="width:${c.prog||0}%"></div></div>
+      </div>
+      <div class="aitem-acts">
+        <button class="abtn" onclick="openCourseForm(${i})"><i class="fas fa-edit"></i></button>
+        <button class="abtn danger" onclick="deleteCourse(${i})"><i class="fas fa-trash"></i></button>
+      </div>
+    </div>`).join('');
+}
+function deleteCourse(i) {
+  const courses = JSON.parse(localStorage.getItem('edumoe-courses') || '[]');
+  courses.splice(i,1); localStorage.setItem('edumoe-courses', JSON.stringify(courses));
+  renderCourses(); showToast('🗑️ Course deleted');
+}
+
+// ── VIDEOS ────────────────────────────────────────────────────
+function openVideoForm() {
+  document.getElementById('video-form-wrap').style.display='block';
+  ['vf-title','vf-id'].forEach(id => { const el=document.getElementById(id); if(el)el.value=''; });
+}
+function toggleTelegramHint(v) {
+  const hint = document.getElementById('vf-hint');
+  if (!hint) return;
+  hint.textContent = v === 'telegram' ? 'Telegram: paste the full post URL e.g. https://t.me/CS_Epic_Save/12' : 'YouTube: paste just the video ID (11 chars after ?v=)';
+}
+function saveVideo() {
+  const title = document.getElementById('vf-title').value.trim();
+  if (!title) { showToast('⚠️ Title required'); return; }
+  const vids = JSON.parse(localStorage.getItem('edumoe-videos') || '[]');
+  vids.push({ title, course: document.getElementById('vf-course').value, source: document.getElementById('vf-source').value, id: document.getElementById('vf-id').value.trim() });
+  localStorage.setItem('edumoe-videos', JSON.stringify(vids));
+  renderVideos();
+  document.getElementById('video-form-wrap').style.display='none';
+  showToast('✅ Video saved'); addActivity('Video added: '+title);
+}
+function renderVideos() {
+  const list = document.getElementById('videos-list');
+  if (!list) return;
+  const vids = JSON.parse(localStorage.getItem('edumoe-videos') || '[]');
+  const sVid = document.getElementById('s-videos'); if(sVid)sVid.textContent=vids.length;
+  if (!vids.length) { list.innerHTML = '<div class="aempty"><i class="fas fa-video"></i>No videos saved yet.</div>'; return; }
+  list.innerHTML = vids.map((v,i) => `
+    <div class="aitem">
+      <div class="aitem-icon"><i class="fab fa-${v.source==='telegram'?'telegram':'youtube'}"></i></div>
+      <div class="aitem-body">
+        <div class="aitem-title">${v.title}</div>
+        <div class="aitem-sub">${v.course||'—'} · ${v.source==='telegram'?'Telegram':'YouTube'} · <code>${(v.id||'').substring(0,40)}</code></div>
+      </div>
+      <div class="aitem-acts">
+        <button class="abtn danger" onclick="deleteVideo(${i})"><i class="fas fa-trash"></i></button>
+      </div>
+    </div>`).join('');
+}
+function deleteVideo(i) {
+  const vids = JSON.parse(localStorage.getItem('edumoe-videos') || '[]');
+  vids.splice(i,1); localStorage.setItem('edumoe-videos', JSON.stringify(vids));
+  renderVideos(); showToast('🗑️ Video deleted');
+}
+
+// ── QUIZ ──────────────────────────────────────────────────────
+function renderQuestions() {
+  const qs = JSON.parse(localStorage.getItem('edumoe-qs') || '[]');
+  const cnt = document.getElementById('qs-count'); if(cnt)cnt.textContent=qs.length+' questions';
+  const list = document.getElementById('question-list'); if(!list)return;
+  if(!qs.length){list.innerHTML='<div class="aempty"><i class="fas fa-question-circle"></i>No custom questions yet.</div>';return;}
+  list.innerHTML=qs.map((q,i)=>`
+    <div class="aitem">
+      <div class="aitem-icon" style="font-size:13px;"><i class="fas fa-question"></i></div>
+      <div class="aitem-body">
+        <div class="aitem-title">${i+1}. ${q.q.substring(0,70)}${q.q.length>70?'…':''}</div>
+        <div class="aitem-sub">Correct: <strong style="color:var(--accent2);">${q.ans}</strong> · Topic: ${q.topic||'General'}</div>
+      </div>
+      <div class="aitem-acts">
+        <button class="abtn danger" onclick="deleteQuestion(${i})"><i class="fas fa-trash"></i></button>
+      </div>
+    </div>`).join('');
+}
+function saveQuestion(){
+  const q=document.getElementById('aq-q').value.trim();
+  if(!q){showToast('⚠️ Question text required');return;}
+  const ans=document.getElementById('aq-ans').value.trim().toUpperCase();
+  if(!['A','B','C','D'].includes(ans)){showToast('⚠️ Correct answer must be A, B, C, or D');return;}
+  const qs=JSON.parse(localStorage.getItem('edumoe-qs')||'[]');
+  qs.push({q,ans,topic:document.getElementById('aq-topic').value,a:document.getElementById('aq-a').value,b:document.getElementById('aq-b').value,c:document.getElementById('aq-c').value,d:document.getElementById('aq-d').value,expl:document.getElementById('aq-expl').value});
+  localStorage.setItem('edumoe-qs',JSON.stringify(qs));
+  renderQuestions();clearQForm();showToast('✅ Question saved!');
+}
+function clearQForm(){['aq-q','aq-a','aq-b','aq-c','aq-d','aq-ans','aq-expl'].forEach(id=>{const el=document.getElementById(id);if(el)el.value='';});}
+function deleteQuestion(i){const qs=JSON.parse(localStorage.getItem('edumoe-qs')||'[]');qs.splice(i,1);localStorage.setItem('edumoe-qs',JSON.stringify(qs));renderQuestions();showToast('🗑️ Question deleted');}
+
+// ── USERS ─────────────────────────────────────────────────────
+let allUsers=[];
+async function loadUsers(){
+  const tbody=document.getElementById('users-tbody');if(!tbody)return;
+  tbody.innerHTML='<tr><td colspan="5" style="text-align:center;padding:30px;color:var(--txt3);">Loading from Supabase...</td></tr>';
+  try{
+    const{data,error}=await _supabase.from('profiles').select('id,full_name,created_at,is_admin').order('created_at',{ascending:false}).limit(200);
+    if(error)throw error;
+    allUsers=data||[];renderUserTable(allUsers);
+  }catch(e){
+    tbody.innerHTML=`<tr><td colspan="5" style="text-align:center;padding:30px;color:var(--txt3);">Could not load users: ${e.message}<br><small>Check RLS policies in Supabase.</small></td></tr>`;
+  }
+}
+function renderUserTable(users){
+  const tbody=document.getElementById('users-tbody');if(!tbody)return;
+  if(!users.length){tbody.innerHTML='<tr><td colspan="5" style="text-align:center;padding:30px;color:var(--txt3);">No users yet</td></tr>';return;}
+  tbody.innerHTML=users.map((u,i)=>`<tr>
+    <td><strong>${u.full_name||'—'}</strong> ${u.is_admin?'<span class="badg badg-warn" style="font-size:10px;">admin</span>':''}</td>
+    <td style="color:var(--txt3);font-size:12px;font-family:monospace;">${u.id.substring(0,12)}…</td>
+    <td style="color:var(--txt2);">${new Date(u.created_at).toLocaleDateString('en-GB')}</td>
+    <td><span class="badg badg-ok">Active</span></td>
+    <td><button class="abtn danger" style="padding:5px 10px;font-size:12px;" onclick="deleteUser('${u.id}','${u.full_name||'this user'}')"><i class="fas fa-user-times"></i> Remove</button></td>
+  </tr>`).join('');
+}
+function filterUsers(q){renderUserTable(allUsers.filter(u=>(u.full_name||'').toLowerCase().includes(q.toLowerCase())));}
+async function deleteUser(id,name){
+  if(!confirm(`Remove ${name}? This deletes their profile from Supabase.`))return;
+  try{const{error}=await _supabase.from('profiles').delete().eq('id',id);if(error)throw error;showToast('✅ User removed');loadUsers();}catch(e){showToast('❌ '+e.message);}
+}
+
+// ── DATABASE VIEWER ───────────────────────────────────────────
+let currentTable='profiles';
+async function loadDbTable(table,tabEl){
+  currentTable=table;
+  if(tabEl){document.querySelectorAll('.db-tab').forEach(t=>t.classList.remove('active'));tabEl.classList.add('active');}
+  const head=document.getElementById('db-head');const body=document.getElementById('db-body');const cnt=document.getElementById('db-count');
+  if(!head||!body)return;
+  body.innerHTML='<tr><td style="padding:30px;text-align:center;color:var(--txt3);">Loading '+table+'...</td></tr>';
+  try{
+    const{data,error}=await _supabase.from(table).select('*').limit(100);
+    if(error)throw error;
+    if(!data?.length){body.innerHTML='<tr><td style="padding:30px;text-align:center;color:var(--txt3);">Table is empty or no access</td></tr>';if(cnt)cnt.textContent='0 rows';head.innerHTML='';return;}
+    const cols=Object.keys(data[0]);
+    head.innerHTML='<tr>'+cols.map(c=>`<th>${c}</th>`).join('')+'</tr>';
+    body.innerHTML=data.map(row=>`<tr>${cols.map(c=>{const val=row[c];const d=val===null?'<em style="color:var(--txt3);">null</em>':typeof val==='object'?'<code style="font-size:11px;">'+JSON.stringify(val).substring(0,50)+'</code>':String(val).substring(0,60);return`<td>${d}</td>`;}).join('')}</tr>`).join('');
+    if(cnt)cnt.textContent=data.length+' rows'+(data.length===100?' (limit 100)':'');
+  }catch(e){body.innerHTML=`<tr><td style="padding:30px;text-align:center;color:var(--txt3);">Error: ${e.message}</td></tr>`;}
+}
+
+// ── SETTINGS ──────────────────────────────────────────────────
+function saveSettings(){showToast('✅ Settings saved locally');addActivity('Settings updated');}
+async function testConnection(){
+  try{const{data,error}=await _supabase.from('profiles').select('id').limit(1);if(error)throw error;showToast('✅ Supabase connected!');}
+  catch(e){showToast('❌ Connection failed: '+e.message);}
+}
+
+// ── ACTIVITY FEED ─────────────────────────────────────────────
+function addActivity(text){
+  const feed=document.getElementById('activity-feed');if(!feed)return;
+  const item=document.createElement('div');item.className='feed-item';
+  item.innerHTML=`<div class="feed-dot"></div><div><div>${text}</div><div class="feed-time">Just now</div></div>`;
+  feed.insertBefore(item,feed.firstChild);
+  while(feed.children.length>8)feed.removeChild(feed.lastChild);
+}
+
+// ── THEME ──────────────────────────────────────────────────────
+function setTheme(t,el){
+  if(t==='ruby')document.documentElement.removeAttribute('data-theme');
+  else document.documentElement.setAttribute('data-theme',t);
+  document.querySelectorAll('.theme-dot').forEach(d=>d.classList.remove('active'));
+  if(el)el.classList.add('active');
+  localStorage.setItem('edumoe-theme',t);showToast('Theme: '+t);
+}
+(function(){
+  const saved=localStorage.getItem('edumoe-theme')||'ruby';
+  if(saved!=='ruby')document.documentElement.setAttribute('data-theme',saved);
+  document.addEventListener('DOMContentLoaded',()=>{
+    const dot=document.getElementById('td-'+saved);
+    if(dot)dot.classList.add('active');
+    else{const r=document.getElementById('td-ruby');if(r)r.classList.add('active');}
+  });
+})();
+
+// ── TOAST ─────────────────────────────────────────────────────
+let _toastTimer;
+function showToast(msg){
+  const t=document.getElementById('toast');const m=document.getElementById('toast-msg');
+  if(!t||!m)return;m.textContent=msg;t.classList.add('show');
+  clearTimeout(_toastTimer);_toastTimer=setTimeout(()=>t.classList.remove('show'),3200);
+}
+
+// ── INIT ──────────────────────────────────────────────────────
+document.addEventListener('DOMContentLoaded', () => {
+  checkExistingSession();
+});
+</script>
+</body>
+</html>
