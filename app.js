@@ -29,8 +29,8 @@
    client-side code (they are the "anon" public keys).
    ─────────────────────────────────────────────────────────────── */
 
-const SUPABASE_URL  = 'https://ihkryvhqdlddywydrwmu.supabase.co';
-const SUPABASE_ANON = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Imloa3J5dmhxZGxkZHl3eWRyd211Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzE2OTc4MTMsImV4cCI6MjA4NzI3MzgxM30.r-jAgmWmtoICgwu5OZlhDIGvh_ZrpAJYSAcdXxgzoWw';
+const SUPABASE_URL  = 'https://ajhbaomxdsvnegjiypob.supabase.co';
+const SUPABASE_ANON = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImFqaGJhb214ZHN2bmVnaml5cG9iIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzIwNDY3NzQsImV4cCI6MjA4NzYyMjc3NH0.FptC_9E49l7V_GhYiVmVwf4Ee8bXkcgcWmc96POmKGI';
 
 const _supabase = supabase.createClient(SUPABASE_URL, SUPABASE_ANON);
 
