@@ -591,21 +591,37 @@ function toggleExplanation() {
 
 
 /* ── 11. FLASHCARDS ─────────────────────────────────────────────
-   Stored in localStorage. renderFlashcards() draws the deck.
-   addFlashcard() adds a new card. clearFlashcards() removes all.
+   Stored in Supabase per user. Falls back to localStorage for
+   guests (not logged in).
    ─────────────────────────────────────────────────────────────── */
 
-function renderFlashcards() {
-  const cards = JSON.parse(localStorage.getItem('edumoe-cards') || '[]');
-  const deck  = document.getElementById('fc-deck');
+async function renderFlashcards() {
+  const deck = document.getElementById('fc-deck');
   if (!deck) return;
+  deck.innerHTML = '<p class="sf-body" style="grid-column:1/-1;color:var(--txt3);">Loading cards...</p>';
+
+  // Try Supabase first (logged-in user)
+  const { data: { session } } = await _supabase.auth.getSession();
+  let cards = [];
+
+  if (session?.user) {
+    const { data, error } = await _supabase
+      .from('flashcards')
+      .select('*')
+      .eq('user_id', session.user.id)
+      .order('created_at', { ascending: false });
+    if (!error && data) cards = data.map(c => ({ front: c.front, back: c.back, category: c.category, _id: c.id }));
+  } else {
+    // Fallback: localStorage for guests
+    cards = JSON.parse(localStorage.getItem('edumoe-cards') || '[]');
+  }
 
   if (!cards.length) {
     deck.innerHTML = '<p class="sf-body" style="grid-column:1/-1;color:var(--txt3);">No cards yet — add one above!</p>';
     return;
   }
 
-  deck.innerHTML = cards.map((card, i) => `
+  deck.innerHTML = cards.map((card) => `
     <div class="flashcard" onclick="this.classList.toggle('flipped')">
       <div class="fc-inner">
         <div class="fc-face fc-front">${card.front}</div>
@@ -615,7 +631,7 @@ function renderFlashcards() {
   `).join('');
 }
 
-function addFlashcard() {
+async function addFlashcard() {
   const frontEl = document.getElementById('fc-f');
   const backEl  = document.getElementById('fc-b');
   const catEl   = document.getElementById('fc-cat');
@@ -625,9 +641,22 @@ function addFlashcard() {
   const back  = backEl.value.trim();
   if (!front || !back) { showToast('⚠️ Fill in both sides'); return; }
 
-  const cards = JSON.parse(localStorage.getItem('edumoe-cards') || '[]');
-  cards.push({ front, back, category: catEl?.value || 'General', created: Date.now() });
-  localStorage.setItem('edumoe-cards', JSON.stringify(cards));
+  const { data: { session } } = await _supabase.auth.getSession();
+
+  if (session?.user) {
+    const { error } = await _supabase.from('flashcards').insert({
+      user_id: session.user.id,
+      front, back,
+      category: catEl?.value || 'General'
+    });
+    if (error) { showToast('❌ ' + error.message); return; }
+  } else {
+    // Guest fallback
+    const cards = JSON.parse(localStorage.getItem('edumoe-cards') || '[]');
+    cards.push({ front, back, category: catEl?.value || 'General', created: Date.now() });
+    localStorage.setItem('edumoe-cards', JSON.stringify(cards));
+    showToast('⚠️ Log in to save cards across devices!');
+  }
 
   frontEl.value = '';
   backEl.value  = '';
@@ -635,12 +664,20 @@ function addFlashcard() {
   showToast('✅ Card added!');
 }
 
-function clearFlashcards() {
-  if (confirm('Delete all flashcards? This cannot be undone.')) {
+async function clearFlashcards() {
+  if (!confirm('Delete all flashcards? This cannot be undone.')) return;
+
+  const { data: { session } } = await _supabase.auth.getSession();
+
+  if (session?.user) {
+    const { error } = await _supabase.from('flashcards').delete().eq('user_id', session.user.id);
+    if (error) { showToast('❌ ' + error.message); return; }
+  } else {
     localStorage.removeItem('edumoe-cards');
-    renderFlashcards();
-    showToast('🗑️ All cards deleted');
   }
+
+  renderFlashcards();
+  showToast('🗑️ All cards deleted');
 }
 
 
