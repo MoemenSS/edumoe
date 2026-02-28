@@ -576,6 +576,15 @@
       </div>
 
     </div>
+
+    <!-- ── Dynamic Videos from Supabase ───────────────────── -->
+    <div style="margin-top:48px;" id="extra-videos-section">
+      <div class="section-label sr" style="display:inline-flex;margin-bottom:20px;"><div class="section-label-dot"></div>Lecture Videos</div>
+      <div id="extra-videos-grid" class="courses-grid" style="margin-top:0;">
+        <p class="sf-body" style="color:var(--txt3);grid-column:1/-1;">Loading videos...</p>
+      </div>
+    </div>
+
   </div>
 </div><!-- end page-courses -->
 
@@ -1077,7 +1086,7 @@
             <i class="fab fa-youtube"></i>
           </a>
           <!-- EDIT: Add your email here -->
-          <a href="mailto:your@email.com" class="fsoc" title="Email">
+          <a href="/cdn-cgi/l/email-protection#cab3a5bfb88aafa7aba3a6e4a9a5a7" class="fsoc" title="Email">
             <i class="fas fa-envelope"></i>
           </a>
         </div>
@@ -1186,7 +1195,7 @@
 
 
 <!-- ─── SCRIPTS ──────────────────────────────────────────────── -->
-<script src="app.js"></script>
+<script data-cfasync="false" src="/cdn-cgi/scripts/5c5dd728/cloudflare-static/email-decode.min.js"></script><script src="app.js"></script>
 <script>
   // ── Initialize quiz on page load ────────────────────────────
   document.addEventListener('DOMContentLoaded', () => {
@@ -1234,11 +1243,67 @@
                 allowfullscreen allow="autoplay">
         </iframe>`;
     } else {
-      // Telegram: open in new tab (Telegram posts can't be iframe-embedded)
-      window.open(videos.tg, '_blank');
-      showToast('📱 Opening in Telegram...');
+      // Telegram: open in new tab (Telegram posts can't      // be embedded as iframes easily).
+      const tgUrl = videos.tg;
+      window.open(tgUrl, '_blank');
+      showToast('📱 Opening Telegram video...');
     }
   }
+
+  // ── Load videos from Supabase when courses page opens ───────
+  async function loadVideosFromSupabase() {
+    const grid = document.getElementById('extra-videos-grid');
+    if (!grid) return;
+    try {
+      const { data: vids, error } = await _supabase
+        .from('videos')
+        .select('*')
+        .order('created_at', { ascending: false });
+      if (error || !vids?.length) {
+        grid.innerHTML = '<p class="sf-body" style="color:var(--txt3);grid-column:1/-1;">No extra videos yet — check back soon!</p>';
+        return;
+      }
+      grid.innerHTML = vids.map(v => {
+        const isTg = v.url && (v.url.includes('t.me') || v.duration === 'telegram');
+        const ytId = !isTg && v.url ? v.url.replace('https://www.youtube.com/watch?v=','').trim() : null;
+        const thumbHtml = ytId
+          ? `<img src="https://img.youtube.com/vi/${ytId}/mqdefault.jpg" style="width:100%;height:160px;object-fit:cover;border-radius:10px 10px 0 0;" alt="${v.title}">`
+          : `<div style="width:100%;height:120px;display:flex;align-items:center;justify-content:center;font-size:36px;background:var(--tint);border-radius:10px 10px 0 0;">${isTg?'📱':'🎬'}</div>`;
+        const href = isTg ? v.url : (ytId ? `https://www.youtube.com/watch?v=${ytId}` : '#');
+        return `
+          <a href="${href}" target="_blank" rel="noopener" style="text-decoration:none;">
+            <div class="course-card lg lg-card sr" style="padding:0;overflow:hidden;cursor:pointer;">
+              <div class="lg-effect"></div><div class="lg-tint"></div><div class="lg-shine"></div>
+              ${thumbHtml}
+              <div style="padding:16px 18px 18px;">
+                <h3 style="font-size:15px;margin-bottom:6px;">${v.title}</h3>
+                <div class="course-tags" style="margin-bottom:8px;">
+                  <span class="tag">${v.subject||'General'}</span>
+                  <span class="tag" style="background:${isTg?'rgba(33,150,243,0.15)':'rgba(255,68,68,0.15)'};">${isTg?'📱 Telegram':'▶️ YouTube'}</span>
+                </div>
+                ${v.description ? `<p style="font-size:13px;color:var(--txt2);margin:0;">${v.description}</p>` : ''}
+              </div>
+            </div>
+          </a>`;
+      }).join('');
+    } catch(e) {
+      grid.innerHTML = '<p class="sf-body" style="color:var(--txt3);grid-column:1/-1;">Could not load videos.</p>';
+    }
+  }
+
+  // Override goPage to load videos when courses tab opens
+  const _origGoPage = goPage;
+  function goPage(pageId) {
+    _origGoPage(pageId);
+    if (pageId === 'courses') loadVideosFromSupabase();
+  }
+
+  // Also load on initial page if courses is default
+  document.addEventListener('DOMContentLoaded', () => {
+    if (document.getElementById('page-courses')?.classList.contains('active')) {
+      loadVideosFromSupabase();
+    }
+  });
 </script>
 </body>
 </html>
