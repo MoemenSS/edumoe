@@ -366,7 +366,7 @@
             <h3>Quiz Questions <span class="badg badg-ok" id="qs-count" style="font-size:12px;"></span></h3>
           </div>
           <div class="anotice"><i class="fas fa-info-circle"></i>
-            <span>Questions are stored in localStorage. The curriculum question bank is built into <code>app.js</code> (5 topics × 5 questions each).</span>
+            <span>Custom questions are stored in Supabase and visible to all students. The built-in curriculum question bank is in <code>app.js</code> (5 topics × 5 questions each).</span>
           </div>
           <div class="lg lg-panel" style="padding:22px;margin-bottom:20px;">
             <div class="lg-effect"></div><div class="lg-tint"></div><div class="lg-shine"></div>
@@ -505,7 +505,7 @@
               <div class="lg-effect"></div><div class="lg-tint"></div><div class="lg-shine"></div>
               <h4 style="font-size:15px;font-weight:700;margin-bottom:10px;">Supabase Connection</h4>
               <p class="sf-caption" style="color:var(--txt3);line-height:1.9;margin-bottom:12px;">
-                Project: <code style="color:var(--accent2);">ihkryvhqdlddywydrwmu</code><br>
+                Project: <code style="color:var(--accent2);">ajhbaomxdsvnegjiypob</code><br>
                 Signed in as: <code id="st-current-email" style="color:var(--accent2);">—</code>
               </p>
               <button class="abtn" onclick="testConnection()">
@@ -810,10 +810,10 @@ async function refreshStats() {
     const logEl = document.getElementById('s-logins');
     if (logEl) logEl.textContent = logCount ?? '—';
 
-    // Videos count
-    const vids = JSON.parse(localStorage.getItem('edumoe-videos') || '[]');
+    // Videos count from Supabase
+    const { count: vidCount } = await _supabase.from('videos').select('*', { count: 'exact', head: true });
     const vEl = document.getElementById('s-videos');
-    if (vEl) vEl.textContent = vids.length;
+    if (vEl) vEl.textContent = vidCount ?? 0;
 
   } catch(e) {
     console.warn('Stats error:', e.message);
@@ -858,20 +858,18 @@ async function loadSecurityLog() {
   }
 }
 
-// ── COURSES ──────────────────────────────────────────────────
-let editingCourse = null;
-function openCourseForm(idx) {
-  editingCourse = idx ?? null;
+// ── COURSES (Supabase) ────────────────────────────────────────
+let editingCourseId = null;
+function openCourseForm(id, title, subject, level, duration, desc) {
+  editingCourseId = id || null;
   const wrap = document.getElementById('course-form-wrap');
   const titleEl = document.getElementById('course-form-title');
-  if (idx !== undefined) {
-    const courses = JSON.parse(localStorage.getItem('edumoe-courses') || '[]');
-    const c = courses[idx];
-    document.getElementById('cf-title').value = c.title || '';
-    document.getElementById('cf-sem').value   = c.sem || '';
-    document.getElementById('cf-tags').value  = (c.tags || []).join(', ');
-    document.getElementById('cf-prog').value  = c.prog || 0;
-    document.getElementById('cf-desc').value  = c.desc || '';
+  if (id) {
+    document.getElementById('cf-title').value = title || '';
+    document.getElementById('cf-sem').value   = subject || '';
+    document.getElementById('cf-tags').value  = level || '';
+    document.getElementById('cf-prog').value  = duration || '';
+    document.getElementById('cf-desc').value  = desc || '';
     if (titleEl) titleEl.textContent = 'Edit Course';
   } else {
     ['cf-title','cf-sem','cf-tags','cf-prog','cf-desc'].forEach(id => { const el=document.getElementById(id); if(el)el.value=''; });
@@ -879,49 +877,61 @@ function openCourseForm(idx) {
   }
   if (wrap) wrap.style.display = 'block';
 }
-function saveCourse() {
+async function saveCourse() {
   const title = document.getElementById('cf-title').value.trim();
   if (!title) { showToast('⚠️ Title required'); return; }
-  const courses = JSON.parse(localStorage.getItem('edumoe-courses') || '[]');
-  const data = {
-    title, sem: document.getElementById('cf-sem').value.trim(),
-    tags: document.getElementById('cf-tags').value.split(',').map(t=>t.trim()).filter(Boolean),
-    prog: parseInt(document.getElementById('cf-prog').value)||0,
-    desc: document.getElementById('cf-desc').value.trim()
+  const payload = {
+    title,
+    subject:   document.getElementById('cf-sem').value.trim() || 'General',
+    level:     document.getElementById('cf-tags').value.trim() || 'Beginner',
+    duration:  document.getElementById('cf-prog').value.trim() || '',
+    description: document.getElementById('cf-desc').value.trim()
   };
-  if (editingCourse !== null) courses[editingCourse] = data;
-  else courses.push(data);
-  localStorage.setItem('edumoe-courses', JSON.stringify(courses));
-  renderCourses();
-  document.getElementById('course-form-wrap').style.display='none';
-  showToast('✅ Course saved'); addActivity('Course saved: '+title);
+  try {
+    let error;
+    if (editingCourseId) {
+      ({ error } = await _supabase.from('courses').update(payload).eq('id', editingCourseId));
+    } else {
+      ({ error } = await _supabase.from('courses').insert(payload));
+    }
+    if (error) throw error;
+    await renderCourses();
+    document.getElementById('course-form-wrap').style.display = 'none';
+    showToast('✅ Course saved'); addActivity('Course saved: ' + title);
+  } catch(e) {
+    showToast('❌ ' + e.message);
+  }
 }
-function renderCourses() {
+async function renderCourses() {
   const list = document.getElementById('courses-list');
   if (!list) return;
-  const courses = JSON.parse(localStorage.getItem('edumoe-courses') || '[]');
-  if (!courses.length) { list.innerHTML = '<div class="aempty"><i class="fas fa-book-open"></i>No courses saved yet.</div>'; return; }
-  list.innerHTML = courses.map((c,i) => `
+  list.innerHTML = '<div class="aempty"><i class="fas fa-spinner fa-spin"></i> Loading...</div>';
+  const { data: courses, error } = await _supabase.from('courses').select('*').order('created_at', { ascending: false });
+  if (error) { list.innerHTML = '<div class="aempty">Error: ' + error.message + '</div>'; return; }
+  const sCount = document.getElementById('s-courses'); if(sCount) sCount.textContent = courses.length;
+  if (!courses.length) { list.innerHTML = '<div class="aempty"><i class="fas fa-book-open"></i>No courses yet — add one above!</div>'; return; }
+  list.innerHTML = courses.map(c => `
     <div class="aitem">
       <div class="aitem-icon"><i class="fas fa-book-open"></i></div>
       <div class="aitem-body">
         <div class="aitem-title">${c.title}</div>
-        <div class="aitem-sub">${c.sem||''} · ${(c.tags||[]).join(', ')||'—'}</div>
-        <div class="aprog"><div class="aprog-fill" style="width:${c.prog||0}%"></div></div>
+        <div class="aitem-sub">${c.subject||''} · ${c.level||''} · ${c.duration||''}</div>
+        <div class="aitem-sub" style="margin-top:4px;color:var(--txt3);">${(c.description||'').substring(0,80)}${(c.description||'').length>80?'…':''}</div>
       </div>
       <div class="aitem-acts">
-        <button class="abtn" onclick="openCourseForm(${i})"><i class="fas fa-edit"></i></button>
-        <button class="abtn danger" onclick="deleteCourse(${i})"><i class="fas fa-trash"></i></button>
+        <button class="abtn" onclick="openCourseForm('${c.id}','${(c.title||'').replace(/'/g,"\\'")}','${(c.subject||'').replace(/'/g,"\\'")}','${(c.level||'').replace(/'/g,"\\'")}','${(c.duration||'').replace(/'/g,"\\'")}','${(c.description||'').replace(/'/g,"\\'")}')"><i class="fas fa-edit"></i></button>
+        <button class="abtn danger" onclick="deleteCourse('${c.id}')"><i class="fas fa-trash"></i></button>
       </div>
     </div>`).join('');
 }
-function deleteCourse(i) {
-  const courses = JSON.parse(localStorage.getItem('edumoe-courses') || '[]');
-  courses.splice(i,1); localStorage.setItem('edumoe-courses', JSON.stringify(courses));
+async function deleteCourse(id) {
+  if (!confirm('Delete this course?')) return;
+  const { error } = await _supabase.from('courses').delete().eq('id', id);
+  if (error) { showToast('❌ ' + error.message); return; }
   renderCourses(); showToast('🗑️ Course deleted');
 }
 
-// ── VIDEOS ────────────────────────────────────────────────────
+// ── VIDEOS (Supabase) ─────────────────────────────────────────
 function openVideoForm() {
   document.getElementById('video-form-wrap').style.display='block';
   ['vf-title','vf-id'].forEach(id => { const el=document.getElementById(id); if(el)el.value=''; });
@@ -931,70 +941,97 @@ function toggleTelegramHint(v) {
   if (!hint) return;
   hint.textContent = v === 'telegram' ? 'Telegram: paste the full post URL e.g. https://t.me/CS_Epic_Save/12' : 'YouTube: paste just the video ID (11 chars after ?v=)';
 }
-function saveVideo() {
+async function saveVideo() {
   const title = document.getElementById('vf-title').value.trim();
   if (!title) { showToast('⚠️ Title required'); return; }
-  const vids = JSON.parse(localStorage.getItem('edumoe-videos') || '[]');
-  vids.push({ title, course: document.getElementById('vf-course').value, source: document.getElementById('vf-source').value, id: document.getElementById('vf-id').value.trim() });
-  localStorage.setItem('edumoe-videos', JSON.stringify(vids));
-  renderVideos();
+  const source = document.getElementById('vf-source').value;
+  const vidId  = document.getElementById('vf-id').value.trim();
+  const course = document.getElementById('vf-course').value;
+  // Build a full URL for the video
+  const url = source === 'telegram' ? vidId : (vidId ? 'https://www.youtube.com/watch?v=' + vidId : '');
+  const { error } = await _supabase.from('videos').insert({
+    title, description: course || '', subject: course || 'General', url, duration: source
+  });
+  if (error) { showToast('❌ ' + error.message); return; }
+  await renderVideos();
   document.getElementById('video-form-wrap').style.display='none';
   showToast('✅ Video saved'); addActivity('Video added: '+title);
 }
-function renderVideos() {
+async function renderVideos() {
   const list = document.getElementById('videos-list');
   if (!list) return;
-  const vids = JSON.parse(localStorage.getItem('edumoe-videos') || '[]');
-  const sVid = document.getElementById('s-videos'); if(sVid)sVid.textContent=vids.length;
-  if (!vids.length) { list.innerHTML = '<div class="aempty"><i class="fas fa-video"></i>No videos saved yet.</div>'; return; }
-  list.innerHTML = vids.map((v,i) => `
+  const { data: vids, error } = await _supabase.from('videos').select('*').order('created_at', { ascending: false });
+  const sVid = document.getElementById('s-videos'); if(sVid) sVid.textContent = vids?.length || 0;
+  if (error) { list.innerHTML = '<div class="aempty">Error: ' + error.message + '</div>'; return; }
+  if (!vids?.length) { list.innerHTML = '<div class="aempty"><i class="fas fa-video"></i>No videos saved yet.</div>'; return; }
+  list.innerHTML = vids.map(v => {
+    const isTg = v.url && (v.url.includes('t.me') || v.duration === 'telegram');
+    return `
     <div class="aitem">
-      <div class="aitem-icon"><i class="fab fa-${v.source==='telegram'?'telegram':'youtube'}"></i></div>
+      <div class="aitem-icon"><i class="fab fa-${isTg?'telegram':'youtube'}"></i></div>
       <div class="aitem-body">
         <div class="aitem-title">${v.title}</div>
-        <div class="aitem-sub">${v.course||'—'} · ${v.source==='telegram'?'Telegram':'YouTube'} · <code>${(v.id||'').substring(0,40)}</code></div>
+        <div class="aitem-sub">${v.subject||'—'} · ${isTg?'Telegram':'YouTube'} · <code>${(v.url||'').substring(0,50)}</code></div>
       </div>
       <div class="aitem-acts">
-        <button class="abtn danger" onclick="deleteVideo(${i})"><i class="fas fa-trash"></i></button>
+        <button class="abtn danger" onclick="deleteVideo('${v.id}')"><i class="fas fa-trash"></i></button>
       </div>
-    </div>`).join('');
+    </div>`;
+  }).join('');
 }
-function deleteVideo(i) {
-  const vids = JSON.parse(localStorage.getItem('edumoe-videos') || '[]');
-  vids.splice(i,1); localStorage.setItem('edumoe-videos', JSON.stringify(vids));
+async function deleteVideo(id) {
+  const { error } = await _supabase.from('videos').delete().eq('id', id);
+  if (error) { showToast('❌ ' + error.message); return; }
   renderVideos(); showToast('🗑️ Video deleted');
 }
 
-// ── QUIZ ──────────────────────────────────────────────────────
-function renderQuestions() {
-  const qs = JSON.parse(localStorage.getItem('edumoe-qs') || '[]');
-  const cnt = document.getElementById('qs-count'); if(cnt)cnt.textContent=qs.length+' questions';
+// ── QUIZ (Supabase) ───────────────────────────────────────────
+async function renderQuestions() {
+  const cnt = document.getElementById('qs-count');
   const list = document.getElementById('question-list'); if(!list)return;
-  if(!qs.length){list.innerHTML='<div class="aempty"><i class="fas fa-question-circle"></i>No custom questions yet.</div>';return;}
-  list.innerHTML=qs.map((q,i)=>`
+  list.innerHTML='<div class="aempty"><i class="fas fa-spinner fa-spin"></i> Loading...</div>';
+  const { data: qs, error } = await _supabase.from('quiz_questions').select('*').order('created_at', { ascending: false });
+  if (error) { list.innerHTML='<div class="aempty">Error: '+error.message+'</div>'; return; }
+  if(cnt) cnt.textContent = (qs?.length||0)+' questions';
+  if(!qs?.length){list.innerHTML='<div class="aempty"><i class="fas fa-question-circle"></i>No custom questions yet.</div>';return;}
+  const ansMap=['A','B','C','D'];
+  list.innerHTML=qs.map(q=>`
     <div class="aitem">
       <div class="aitem-icon" style="font-size:13px;"><i class="fas fa-question"></i></div>
       <div class="aitem-body">
-        <div class="aitem-title">${i+1}. ${q.q.substring(0,70)}${q.q.length>70?'…':''}</div>
-        <div class="aitem-sub">Correct: <strong style="color:var(--accent2);">${q.ans}</strong> · Topic: ${q.topic||'General'}</div>
+        <div class="aitem-title">${q.question.substring(0,70)}${q.question.length>70?'…':''}</div>
+        <div class="aitem-sub">Correct: <strong style="color:var(--accent2);">${ansMap[q.correct_opt]}</strong> · Subject: ${q.subject||'General'}</div>
       </div>
       <div class="aitem-acts">
-        <button class="abtn danger" onclick="deleteQuestion(${i})"><i class="fas fa-trash"></i></button>
+        <button class="abtn danger" onclick="deleteQuestion('${q.id}')"><i class="fas fa-trash"></i></button>
       </div>
     </div>`).join('');
 }
-function saveQuestion(){
+async function saveQuestion(){
   const q=document.getElementById('aq-q').value.trim();
   if(!q){showToast('⚠️ Question text required');return;}
   const ans=document.getElementById('aq-ans').value.trim().toUpperCase();
   if(!['A','B','C','D'].includes(ans)){showToast('⚠️ Correct answer must be A, B, C, or D');return;}
-  const qs=JSON.parse(localStorage.getItem('edumoe-qs')||'[]');
-  qs.push({q,ans,topic:document.getElementById('aq-topic').value,a:document.getElementById('aq-a').value,b:document.getElementById('aq-b').value,c:document.getElementById('aq-c').value,d:document.getElementById('aq-d').value,expl:document.getElementById('aq-expl').value});
-  localStorage.setItem('edumoe-qs',JSON.stringify(qs));
-  renderQuestions();clearQForm();showToast('✅ Question saved!');
+  const ansMap={'A':0,'B':1,'C':2,'D':3};
+  const { error } = await _supabase.from('quiz_questions').insert({
+    question: q,
+    subject: document.getElementById('aq-topic').value || 'General',
+    opt_a: document.getElementById('aq-a').value,
+    opt_b: document.getElementById('aq-b').value,
+    opt_c: document.getElementById('aq-c').value,
+    opt_d: document.getElementById('aq-d').value,
+    correct_opt: ansMap[ans],
+    explanation: document.getElementById('aq-expl').value
+  });
+  if(error){showToast('❌ '+error.message);return;}
+  await renderQuestions();clearQForm();showToast('✅ Question saved!');
 }
 function clearQForm(){['aq-q','aq-a','aq-b','aq-c','aq-d','aq-ans','aq-expl'].forEach(id=>{const el=document.getElementById(id);if(el)el.value='';});}
-function deleteQuestion(i){const qs=JSON.parse(localStorage.getItem('edumoe-qs')||'[]');qs.splice(i,1);localStorage.setItem('edumoe-qs',JSON.stringify(qs));renderQuestions();showToast('🗑️ Question deleted');}
+async function deleteQuestion(id){
+  const{error}=await _supabase.from('quiz_questions').delete().eq('id',id);
+  if(error){showToast('❌ '+error.message);return;}
+  renderQuestions();showToast('🗑️ Question deleted');
+}
 
 // ── USERS ─────────────────────────────────────────────────────
 let allUsers=[];
