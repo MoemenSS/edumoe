@@ -500,10 +500,48 @@ const QUESTION_BANK = {
       ans: 0,
       explanation: 'For Poisson(λ): E[X] = λ and Var[X] = λ. Both equal λ — a special property. Here λ=3, so E[X] = 3 and σ = √3 ≈ 1.73.'
     }
+  ],
+  arrays: [
+    {
+      topic: 'C++ · Arrays',
+      q: 'How do you declare an integer array of size 5 in C++?',
+      opts: ['A. int arr[5];','B. array<int> arr(5);','C. int arr = new int[5];','D. int[5] arr;'],
+      ans: 0,
+      explanation: '`int arr[5];` declares a static array of 5 integers on the stack. Option B uses std::array (needs #include <array>), C is Java-style (invalid in C++), D is invalid syntax.'
+    },
+    {
+      topic: 'C++ · Arrays',
+      q: 'What is the index of the last element in an array of size n?',
+      opts: ['A. n','B. n+1','C. n-1','D. 1'],
+      ans: 2,
+      explanation: 'Arrays in C++ are 0-indexed. The first element is at index 0, and the last is at index n-1. Accessing index n is out-of-bounds (undefined behavior).'
+    },
+    {
+      topic: 'C++ · Arrays',
+      q: 'What does this code print? int a[]={10,20,30}; cout << a[1];',
+      opts: ['A. 10','B. 20','C. 30','D. Compile error'],
+      ans: 1,
+      explanation: 'Array indexing is 0-based: a[0]=10, a[1]=20, a[2]=30. So a[1] prints 20.'
+    },
+    {
+      topic: 'C++ · Arrays',
+      q: 'Which function from <algorithm> sorts an array in ascending order?',
+      opts: ['A. order()','B. arrange()','C. sort()','D. qsort()'],
+      ans: 2,
+      explanation: '`std::sort(arr, arr+n)` from <algorithm> sorts in ascending order by default. qsort() is C-style and less type-safe. order() and arrange() don\'t exist in the STL.'
+    },
+    {
+      topic: 'C++ · Arrays',
+      q: 'What happens when you access an array out of bounds in C++?',
+      opts: ['A. Exception is thrown','B. Returns 0','C. Undefined behavior','D. Program terminates'],
+      ans: 2,
+      explanation: 'C++ does NOT perform bounds checking on raw arrays. Out-of-bounds access is undefined behavior — it might crash, return garbage, or silently corrupt memory.'
+    }
   ]
 };
 
 // Pick a random question from a topic, track last shown to avoid repeats
+let currentQuizQ = null;
 const _lastQ = {};
 function getRandomQuestion(topic) {
   const bank = QUESTION_BANK[topic];
@@ -528,6 +566,7 @@ const QUESTIONS = new Proxy({}, {
 
 function loadQuizQuestion(key) {
   const q = QUESTIONS[key]; if (!q) return;
+  currentQuizQ = q;
   quizAnswered = false;
 
   const topicBadge = document.getElementById('quiz-topic-badge');
@@ -576,11 +615,8 @@ function answerQuiz(el) {
   // Auto-show explanation
   const expl = document.getElementById('quiz-expl');
   if (expl) {
-    const qKey = document.querySelector('[data-quiz-key]')?.getAttribute('data-quiz-key');
-    // Try to find current question explanation from the opts we built
-    const q = Object.values(QUESTIONS).find(q => q.opts.some(o => el.textContent.trim().startsWith(o.text.substring(0,5))));
     expl.style.display = 'block';
-    if (q) expl.innerHTML = `<strong style="color:var(--accent2)">📚 Explanation</strong><br><br>${q.explanation}`;
+    if (currentQuizQ) expl.innerHTML = `<strong style="color:var(--accent2)">📚 Explanation</strong><br><br>${currentQuizQ.explanation}`;
   }
 }
 
@@ -1168,7 +1204,11 @@ function solveDerivative(expr) {
 function solveIntegral(expr) {
   const m=expr.match(/^(.+?)\s+from\s+([-\d.π]+)\s+to\s+([-\d.π]+)$/i);
   let funcExpr=expr,a=null,b=null;
-  if(m){funcExpr=m[1].trim();a=parseFloat(m[2].replace('π',Math.PI));b=parseFloat(m[3].replace('π',Math.PI));}
+  if(m){
+    funcExpr=m[1].trim();
+    a = m[2].trim() === 'π' ? Math.PI : parseFloat(m[2].replace('π','*'+Math.PI));
+    b = m[3].trim() === 'π' ? Math.PI : parseFloat(m[3].replace('π','*'+Math.PI));
+  }
 
   let out=`<strong style="color:var(--accent2)">∫ ${funcExpr} dx</strong><br><br>`;
 
@@ -1355,6 +1395,8 @@ let probDistType = 'normal';
 function initProbabilityChart() {
   const canvas = document.getElementById('probCanvas');
   if (!canvas) return;
+  // Build chart directly on first init to avoid circular call
+  probChartInstance = true; // sentinel to prevent re-entry
   updateProbChart();
 }
 
