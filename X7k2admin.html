@@ -295,11 +295,11 @@
             <h4 style="font-size:15px;font-weight:700;margin-bottom:14px;" id="course-form-title">Add Course</h4>
             <div class="aform-row">
               <div class="aform-field"><div class="ainput-lbl">Title</div><input class="ainput" id="cf-title" placeholder="e.g. Logic Design"></div>
-              <div class="aform-field"><div class="ainput-lbl">Semester</div><input class="ainput" id="cf-sem" placeholder="e.g. Semester 2"></div>
+              <div class="aform-field"><div class="ainput-lbl">Subject</div><input class="ainput" id="cf-subject" placeholder="e.g. Semester 2"></div>
             </div>
             <div class="aform-row">
-              <div class="aform-field"><div class="ainput-lbl">Tags (comma separated)</div><input class="ainput" id="cf-tags" placeholder="C++, OOP"></div>
-              <div class="aform-field"><div class="ainput-lbl">Progress % (0-100)</div><input class="ainput" id="cf-prog" type="number" min="0" max="100" placeholder="40"></div>
+              <div class="aform-field"><div class="ainput-lbl">Level</div><input class="ainput" id="cf-level" placeholder="Beginner, Intermediate"></div>
+              <div class="aform-field"><div class="ainput-lbl">Duration</div><input class="ainput" id="cf-duration" placeholder="e.g. 10 hours"></div>
             </div>
             <div class="aform-field"><div class="ainput-lbl">Description</div>
               <textarea class="ainput" id="cf-desc" placeholder="Short course description..." style="height:70px;resize:vertical;border-radius:10px;"></textarea>
@@ -559,10 +559,10 @@ ALTER TABLE profiles ADD COLUMN IF NOT EXISTS is_admin BOOLEAN DEFAULT FALSE;
               <h4 style="font-size:15px;font-weight:700;margin-bottom:12px;">Theme</h4>
               <div class="theme-row">
                 <div class="theme-dot active" id="td-ruby"    onclick="setTheme('ruby',this)"   title="Ruby (default)"></div>
-                <div class="theme-dot" id="td-aurora"  onclick="setTheme('aurora',this)"  title="Aurora"></div>
-                <div class="theme-dot" id="td-midnight" onclick="setTheme('midnight',this)" title="Midnight"></div>
-                <div class="theme-dot" id="td-solar"   onclick="setTheme('solar',this)"   title="Solar"></div>
-                <div class="theme-dot" id="td-ocean"   onclick="setTheme('ocean',this)"   title="Ocean"></div>
+                <div class="theme-dot" id="td-lava"   onclick="setTheme('lava',this)"   title="Lava (Orange)"></div>
+                <div class="theme-dot" id="td-space"  onclick="setTheme('space',this)"  title="Space (Purple)"></div>
+                <div class="theme-dot" id="td-oxford" onclick="setTheme('oxford',this)" title="Oxford (Cyan)"></div>
+                <div class="theme-dot" id="td-light"  onclick="setTheme('light',this)"  title="Light (White)"></div>
               </div>
             </div>
 
@@ -577,7 +577,6 @@ ALTER TABLE profiles ADD COLUMN IF NOT EXISTS is_admin BOOLEAN DEFAULT FALSE;
 <!-- Toast -->
 <div class="toast" id="toast"><span id="toast-msg"></span></div>
 
-<script src="app.js"></script>
 <script>
 /* ════════════════════════════════════════════════════════════
    ADMIN PANEL — SECURE AUTH + IP LOGGING
@@ -865,14 +864,14 @@ function openCourseForm(id, title, subject, level, duration, desc) {
   const wrap = document.getElementById('course-form-wrap');
   const titleEl = document.getElementById('course-form-title');
   if (id) {
-    document.getElementById('cf-title').value = title || '';
-    document.getElementById('cf-sem').value   = subject || '';
-    document.getElementById('cf-tags').value  = level || '';
-    document.getElementById('cf-prog').value  = duration || '';
-    document.getElementById('cf-desc').value  = desc || '';
+    document.getElementById('cf-title').value   = title || '';
+    document.getElementById('cf-subject').value  = subject || '';
+    document.getElementById('cf-level').value    = level || '';
+    document.getElementById('cf-duration').value = duration || '';
+    document.getElementById('cf-desc').value     = desc || '';
     if (titleEl) titleEl.textContent = 'Edit Course';
   } else {
-    ['cf-title','cf-sem','cf-tags','cf-prog','cf-desc'].forEach(id => { const el=document.getElementById(id); if(el)el.value=''; });
+    ['cf-title','cf-subject','cf-level','cf-duration','cf-desc'].forEach(id => { const el=document.getElementById(id); if(el)el.value=''; });
     if (titleEl) titleEl.textContent = 'Add Course';
   }
   if (wrap) wrap.style.display = 'block';
@@ -882,9 +881,9 @@ async function saveCourse() {
   if (!title) { showToast('⚠️ Title required'); return; }
   const payload = {
     title,
-    subject:   document.getElementById('cf-sem').value.trim() || 'General',
-    level:     document.getElementById('cf-tags').value.trim() || 'Beginner',
-    duration:  document.getElementById('cf-prog').value.trim() || '',
+    subject:   document.getElementById('cf-subject').value.trim() || 'General',
+    level:     document.getElementById('cf-level').value.trim() || 'Beginner',
+    duration:  document.getElementById('cf-duration').value.trim() || '',
     description: document.getElementById('cf-desc').value.trim()
   };
   try {
