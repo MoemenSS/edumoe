@@ -64,11 +64,6 @@
     <span class="nav-logo-name">EDUMOE</span>
   </a>
 
-  <!-- Hamburger button (mobile) -->
-  <button class="hamburger" id="hamburgerBtn" onclick="toggleMobileNav()" aria-label="Menu">
-    <span></span><span></span><span></span>
-  </button>
-
   <!-- Main nav links -->
   <div class="nav-links">
     <button class="nav-btn-link active" onclick="goPage('home')">Home</button>
@@ -109,35 +104,6 @@
     </button>
   </div>
 </nav>
-
-<!-- ─── MOBILE NAV OVERLAY ─────────────────────────────────── -->
-<div class="mobile-nav-overlay" id="mobileNavOverlay">
-  <div class="mobile-nav-panel lg lg-panel">
-    <div class="lg-effect"></div><div class="lg-tint"></div><div class="lg-shine"></div>
-    <button class="mobile-nav-close" onclick="toggleMobileNav()">
-      <i class="fas fa-times"></i>
-    </button>
-    <div class="mobile-nav-links">
-      <button onclick="goPage('home');toggleMobileNav()"><i class="fas fa-home"></i> Home</button>
-      <button onclick="goPage('courses');toggleMobileNav()"><i class="fas fa-book"></i> Courses</button>
-      <button onclick="goPage('simulators');toggleMobileNav()"><i class="fas fa-flask"></i> Simulators</button>
-      <button onclick="goPage('quiz');toggleMobileNav()"><i class="fas fa-question-circle"></i> Quiz</button>
-      <button onclick="goPage('flashcards');toggleMobileNav()"><i class="fas fa-layer-group"></i> Flashcards</button>
-      <button onclick="goPage('moeai');toggleMobileNav()"><i class="fas fa-robot"></i> MoeAI</button>
-      <button onclick="goPage('pricing');toggleMobileNav()"><i class="fas fa-tag"></i> Pricing</button>
-      <button onclick="goPage('about');toggleMobileNav()"><i class="fas fa-info-circle"></i> About</button>
-    </div>
-    <div class="mobile-nav-auth">
-      <button class="btn btn-fire" onclick="document.getElementById('loginModal').classList.add('open');toggleMobileNav()">
-        <i class="fas fa-sign-in-alt"></i> Log In
-      </button>
-      <button class="btn lg lg-pill" style="border:1px solid var(--border2)" onclick="document.getElementById('signupModal').classList.add('open');toggleMobileNav()">
-        <div class="lg-effect"></div><div class="lg-tint"></div><div class="lg-shine"></div>
-        Sign Up Free
-      </button>
-    </div>
-  </div>
-</div>
 
 
 <!-- ═══════════════════════════════════════════════════════════
@@ -626,15 +592,15 @@
 
 
 <!-- ═══════════════════════════════════════════════════════════
-    PAGE: SIMULATORS
-    5 practical tools across the core subjects.
+     PAGE: SIMULATORS
+     4 simulators, one per subject.
      ═══════════════════════════════════════════════════════════ -->
 <div class="page" id="page-simulators">
   <div class="wrap section">
     <div class="section-head sr">
       <div class="section-label" style="display:inline-flex;"><div class="section-label-dot"></div>Tools</div>
       <h2 class="sf-title">Simulators</h2>
-      <p>Five practical tools for your core CS subjects. No installs, no accounts needed.</p>
+      <p>Four fully functional tools — one per subject. No installs, no accounts needed.</p>
     </div>
 
     <div class="sim-grid">
@@ -642,99 +608,28 @@
       <!-- ── SIM 1: C++ COMPILER ─── (Computing Fundamentals) ─── -->
       <div class="sim-card lg lg-card sr" style="grid-column: 1 / -1;">
         <div class="lg-effect"></div><div class="lg-tint"></div><div class="lg-shine"></div>
-        <div class="compiler-shell">
-          <!-- Header bar -->
-          <div class="compiler-header">
-            <div class="compiler-dots"><span class="cdot cdot-r"></span><span class="cdot cdot-y"></span><span class="cdot cdot-g"></span></div>
-            <span class="compiler-filename"><i class="fas fa-terminal"></i> C++ Compiler</span>
-            <div class="compiler-actions">
-              <select class="compiler-select" id="cppExamples" onchange="loadCppExample(this.value)">
-                <option value="">— Examples —</option>
-                <option value="hello">Hello World</option>
-                <option value="fibonacci">Fibonacci</option>
-                <option value="factorial">Factorial</option>
-                <option value="pointers">Pointers</option>
-                <option value="oop">OOP Classes</option>
-              </select>
-              <button class="btn btn-fire compiler-run-btn" id="run-btn" onclick="runCppCode()">
-                <i class="fas fa-play"></i> Run
-              </button>
-              <button class="compiler-action-btn" onclick="resetCppCode()">
-                <i class="fas fa-undo"></i>
-              </button>
-            </div>
-          </div>
-          <!-- Editor body -->
-          <div class="compiler-body">
-            <div class="line-nums" id="lineNums">1<br>2<br>3<br>4<br>5<br>6<br>7</div>
-            <textarea id="cppEditor" spellcheck="false" oninput="updateLineNumbers()">#include &lt;iostream&gt;
-using namespace std;
-int main() {
-    cout &lt;&lt; "Hello, World!" &lt;&lt; endl;
-    cout &lt;&lt; "Welcome to EDUMOE!" &lt;&lt; endl;
-    return 0;
-}</textarea>
-          </div>
-          <!-- Stdin -->
-          <div class="compiler-stdin">
-            <label><i class="fas fa-keyboard"></i> Standard Input (stdin)</label>
-            <textarea id="cppStdin" rows="2" placeholder="Enter input for cin >> here..."></textarea>
-          </div>
-          <!-- Output -->
-          <div class="compiler-output" id="outputPanel">
-            <div class="compiler-output-header">
-              <span><i class="fas fa-chevron-right"></i> Output</span>
-              <span class="compiler-exec-time" id="exec-time"></span>
-            </div>
-            <pre class="compiler-output-body" id="cppOutput">Press Run to compile and execute your code.</pre>
-          </div>
-        </div>
-        <p class="sf-caption" style="margin-top:10px;">
-          <i class="fas fa-info-circle" style="color:var(--accent2);"></i>
-          Real C++ compilation via Piston API. Supports <code style="color:var(--accent3);">cin</code>, all standard libraries, and full <code style="color:var(--accent3);">g++ 10.2</code>. Press <kbd>Ctrl+Enter</kbd> to run.
-        </p>
-      </div>
-
-      <!-- ── SIM: NUMBER SYSTEM CONVERTER ─── (Computing Fundamentals) ─── -->
-      <div class="sim-card lg lg-card sr" style="grid-column: 1 / -1;">
-        <div class="lg-effect"></div><div class="lg-tint"></div><div class="lg-shine"></div>
-        <div style="display:flex;align-items:center;gap:12px;margin-bottom:18px;flex-wrap:wrap;">
+        <div style="display:flex;align-items:center;gap:12px;margin-bottom:18px;">
           <div style="width:42px;height:42px;border-radius:12px;background:linear-gradient(135deg,var(--accent),var(--accent2));display:flex;align-items:center;justify-content:center;color:#fff;font-size:18px;">
-            <i class="fas fa-exchange-alt"></i>
+            <i class="fas fa-terminal"></i>
           </div>
           <div>
-            <h3 class="sf-headline">Number System Converter</h3>
-            <p class="sf-caption">Computing Fundamentals · Binary · Decimal · Hexadecimal · Octal · Step-by-step</p>
+            <h3 class="sf-headline">C++ Compiler</h3>
+            <!-- EDIT: subtitle -->
+            <p class="sf-caption">Computing Fundamentals · Full C++17 · Write, run, and debug instantly</p>
           </div>
+          <a href="https://onecompiler.com/cpp" target="_blank"
+             class="btn btn-fire" style="margin-left:auto;text-decoration:none;padding:9px 16px;font-size:13px;">
+            <i class="fas fa-external-link-alt"></i> Full Screen
+          </a>
         </div>
-        <div class="numconv-input-row" style="display:flex;gap:12px;margin-bottom:18px;flex-wrap:wrap;">
-          <input type="text" id="numconvInput" class="numconv-input" placeholder="Enter a number..." oninput="convertNumber()" autocomplete="off">
-          <select id="numconvBase" class="numconv-base-select" onchange="convertNumber()">
-            <option value="10">Decimal (Base 10)</option>
-            <option value="2">Binary (Base 2)</option>
-            <option value="16">Hexadecimal (Base 16)</option>
-            <option value="8">Octal (Base 8)</option>
-          </select>
+        <div style="border-radius:14px;overflow:hidden;border:1px solid var(--border);">
+          <iframe
+            src="https://onecompiler.com/embed/cpp?theme=dark&hideTitle=true&hideNew=true&hideStdin=false"
+            width="100%" height="500"
+            style="border:none;display:block;background:#0d0d14;"
+            allowfullscreen title="C++ Compiler">
+          </iframe>
         </div>
-        <div class="numconv-grid">
-          <div class="numconv-card" data-base="2">
-            <div class="numconv-card-label"><i class="fas fa-microchip"></i> Binary (Base 2)</div>
-            <div class="numconv-card-value" id="nc-bin-val">—</div>
-          </div>
-          <div class="numconv-card" data-base="10">
-            <div class="numconv-card-label"><i class="fas fa-hashtag"></i> Decimal (Base 10)</div>
-            <div class="numconv-card-value" id="nc-dec-val">—</div>
-          </div>
-          <div class="numconv-card" data-base="16">
-            <div class="numconv-card-label"><i class="fas fa-code"></i> Hexadecimal (Base 16)</div>
-            <div class="numconv-card-value" id="nc-hex-val">—</div>
-          </div>
-          <div class="numconv-card" data-base="8">
-            <div class="numconv-card-label"><i class="fas fa-th"></i> Octal (Base 8)</div>
-            <div class="numconv-card-value" id="nc-oct-val">—</div>
-          </div>
-        </div>
-        <div class="numconv-steps" id="numconvSteps"></div>
       </div>
 
       <!-- ── SIM 2: LOGISIM GATE SIMULATOR ─── (Logic Design) ─── -->
@@ -757,8 +652,7 @@ int main() {
             <span style="font-size:11px;color:var(--txt3);font-weight:600;margin-right:4px;">PRESETS:</span>
             <button class="gate-btn" onclick="loadLogisimPreset('half-adder')">Half Adder</button>
             <button class="gate-btn" onclick="loadLogisimPreset('full-adder')">Full Adder</button>
-            <button class="gate-btn" onclick="loadLogisimPreset('majority')">Majority (3-bit)</button>
-            <button class="gate-btn" onclick="loadLogisimPreset('parity-check')">Parity Checker</button>
+            <button class="gate-btn" onclick="loadLogisimPreset('sr-latch')">SR Latch</button>
             <button class="gate-btn" onclick="loadLogisimPreset('decoder')">2-to-4 Decoder</button>
             <span style="margin:0 6px;color:var(--border2);">|</span>
             <!-- Add gates -->
@@ -777,21 +671,18 @@ int main() {
             <button class="gate-btn danger" onclick="deleteLogisimSelected()"><i class="fas fa-trash"></i> Delete</button>
             <button class="gate-btn danger" onclick="clearLogisim()"><i class="fas fa-times"></i> Clear</button>
           </div>
-          <div class="logisim-preset-info" id="logisimPresetInfo">
-            Loaded preset: Half Adder. Toggle A and B to see Sum and Carry update in the truth table.
-          </div>
           <!-- Canvas -->
           <canvas id="logisim-canvas" class="logisim-canvas" style="height:400px;background:#050510;"></canvas>
         </div>
 
         <!-- Instructions + Truth table -->
-        <div class="sim-side-info">
+        <div style="display:grid;grid-template-columns:1fr 1fr;gap:16px;margin-top:14px;">
           <div>
             <p class="sf-caption" style="margin-bottom:8px;">
               <i class="fas fa-info-circle" style="color:var(--accent2);"></i>
               <strong style="color:var(--txt2);">How to use:</strong>
               Click a gate button then click on the canvas to place it.
-              New gates auto-connect to the nearest useful signals. Click IN nodes to toggle 0/1. Select + drag to move gates.
+              Click IN nodes to toggle 0/1. Select + drag to move gates.
               Green wires = HIGH (1), dark wires = LOW (0).
             </p>
           </div>
@@ -1057,72 +948,25 @@ int main() {
   <div class="wrap section">
     <div class="section-head sr">
       <div class="section-label" style="display:inline-flex;"><div class="section-label-dot"></div>AI</div>
+      <!-- EDIT: MoeAI section title -->
       <h2 class="sf-title">MoeAI</h2>
-      <p>Your AI study assistant — completely free</p>
+      <p>Your AI study assistant — coming soon</p>
     </div>
-
-    <!-- API Key Setup -->
-    <div class="moeai-setup" id="moeaiSetup">
-      <div class="lg lg-card sr" style="max-width:520px;margin:0 auto;padding:32px;">
+    <div class="moeai-layout">
+      <div class="moeai-sphere lg sr">
         <div class="lg-effect"></div><div class="lg-tint"></div><div class="lg-shine"></div>
-        <div style="text-align:center;">
-          <div style="font-size:48px;margin-bottom:16px;">🤖</div>
-          <h3 class="sf-headline" style="margin-bottom:8px;">Set Up MoeAI</h3>
-          <p class="sf-body" style="margin-bottom:16px;color:var(--txt2);">MoeAI uses Google Gemini — free, no credit card needed.</p>
-          <ol style="text-align:left;margin-bottom:20px;color:var(--txt2);line-height:2;font-size:14px;">
-            <li>Go to <a href="https://aistudio.google.com/apikey" target="_blank" rel="noopener" style="color:var(--accent);text-decoration:underline;">Google AI Studio</a></li>
-            <li>Sign in with your Google account</li>
-            <li>Click <strong>"Create API Key"</strong></li>
-            <li>Copy the key and paste it below</li>
-          </ol>
-          <div style="display:flex;gap:8px;">
-            <input type="password" id="moeaiApiKey" class="numconv-input" placeholder="Paste your Gemini API key..." style="flex:1;">
-            <button class="btn btn-fire" onclick="saveMoeAIKey()">
-              <i class="fas fa-check"></i> Save
-            </button>
-          </div>
-        </div>
+        🤖
       </div>
-    </div>
-
-    <!-- Chat Interface (hidden until key is set) -->
-    <div class="moeai-chat-container" id="moeaiChat" style="display:none;">
-      <div class="moeai-chat-header">
-        <div style="display:flex;align-items:center;gap:10px;">
-          <span style="font-size:24px;">🤖</span>
-          <div>
-            <strong style="color:var(--txt1);">MoeAI</strong>
-            <span class="moeai-status" id="moeaiStatus">Online</span>
-          </div>
+      <div>
+        <!-- EDIT: MoeAI description -->
+        <h2 class="moeai-title">Ask Anything About Your CS Courses</h2>
+        <p class="sf-body" style="margin-bottom:20px;">MoeAI understands your curriculum and can explain concepts, debug code, and help you prepare for exams.</p>
+        <div class="moeai-chat">
+          <div class="moeai-bubble user">How do I implement a binary search tree in C++?</div>
+          <div class="moeai-bubble ai">Great question! A BST node has a value and two child pointers. Let me walk you through the implementation step by step…</div>
         </div>
-        <div style="display:flex;gap:8px;">
-          <button class="moeai-action-btn" onclick="clearMoeAIChat()" title="New Chat"><i class="fas fa-plus"></i></button>
-          <button class="moeai-action-btn" onclick="showMoeAISetup()" title="Change API Key"><i class="fas fa-key"></i></button>
-        </div>
-      </div>
-      <div class="moeai-memory-card">
-        <div class="moeai-memory-top">
-          <div>
-            <strong style="color:var(--txt1);">Memory</strong>
-            <span class="moeai-memory-state" id="moeaiMemoryState">Saved in this browser</span>
-          </div>
-          <button class="moeai-action-btn" onclick="saveMoeAIMemory()" title="Save memory for future replies">
-            <i class="fas fa-brain"></i>
-            Save Memory
-          </button>
-        </div>
-        <textarea id="moeaiMemoryInput" placeholder="Tell MoeAI what to remember: your preferred language, exam date, weak topics, project context, or goals..."></textarea>
-      </div>
-      <div class="moeai-messages" id="moeaiMessages">
-        <div class="moeai-msg ai">
-          <div class="moeai-avatar">🤖</div>
-          <div class="moeai-text">Hey! I'm MoeAI, your CS study buddy. Ask me anything about C++, Logic Design, Calculus, Probability — or just say hi! 🎓</div>
-        </div>
-      </div>
-      <div class="moeai-input-row">
-        <input type="text" id="moeaiInput" placeholder="Ask MoeAI anything..." onkeydown="if(event.key==='Enter'&&!event.shiftKey)sendMoeAI()">
-        <button class="btn btn-fire" onclick="sendMoeAI()" id="moeaiSendBtn">
-          <i class="fas fa-paper-plane"></i>
+        <button class="btn btn-fire" onclick="showToast('🤖 MoeAI coming soon!')">
+          <i class="fas fa-rocket"></i> Coming Soon
         </button>
       </div>
     </div>
@@ -1196,7 +1040,7 @@ int main() {
       <h2 class="sf-title">About EDUMOE</h2>
       <p style="max-width:640px;margin:0 auto;">
         <!-- EDIT: Your about text here -->
-        EDUMOE is a free, interactive CS learning platform built by a student in Egypt. We provide real compilers, AI tutoring, logic simulators, and calculus solvers — all designed around your university curriculum.
+        idk bro. estana bs da m4 el website kamel, ana lsa h3ml 7gat kteera. trust.
       </p>
     </div>
 
@@ -1271,7 +1115,7 @@ int main() {
         <a href="#" onclick="goPage('pricing');return false;">Pricing</a>
         <a href="#" onclick="goPage('about');return false;">About</a>
         <!-- EDIT: Add admin link if you want it visible — or keep it private -->
-        <!-- Admin panel link kept private -->
+        <a href="X7k2admin.html">Admin</a>
       </div>
 
       <div class="footer-col">
@@ -1286,7 +1130,7 @@ int main() {
     </div>
     <div class="footer-bottom">
       <!-- EDIT: Change the copyright name -->
-      © <span id="yr"></span> EDUMOE. Built with ❤️ in Egypt.
+      © <span id="yr"></span> EDUMOE. Made by an idiot.
     </div>
   </div>
 </footer>
