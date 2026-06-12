@@ -3,31 +3,15 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-
   <title>EDUMOE · CS Learning Platform</title>
 
-  <!-- Supabase -->
   <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
-
-  <!-- Math.js for calculus solver -->
   <script src="https://cdnjs.cloudflare.com/ajax/libs/mathjs/12.4.2/math.min.js"></script>
-
-  <!-- Chart.js for graphs -->
   <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.2/dist/chart.umd.min.js"></script>
-
-  <!-- Three.js for 3D background -->
-  <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
-
-  <!-- Fonts -->
   <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800;900&display=swap" rel="stylesheet">
-
-  <!-- Icons -->
   <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
-
-  <!-- EDUMOE styles -->
   <link rel="stylesheet" href="style.css">
 
-  <!-- SVG filter for glass distortion effect -->
   <svg style="position:absolute;width:0;height:0;overflow:hidden" aria-hidden="true">
     <filter id="glass-distortion">
       <feTurbulence type="fractalNoise" baseFrequency="0.02" numOctaves="3" result="noise"/>
@@ -37,17 +21,14 @@
 </head>
 <body>
 
-<!-- ─── BACKGROUND 3D PARTICLES (Three.js) ─────────────────── -->
-<canvas id="three-bg-canvas" style="position: fixed; top: 0; left: 0; width: 100%; height: 100%; z-index: -2;"></canvas>
-
-<!-- ─── BACKGROUND AMBIENT ORBS (fallback if Three.js fails) ── -->
+<!-- ─── BACKGROUND AMBIENT ORBS ─────────────────────────────── -->
 <div class="bg-canvas">
   <div class="bg-orb bg-orb-1"></div>
   <div class="bg-orb bg-orb-2"></div>
   <div class="bg-orb bg-orb-3"></div>
 </div>
 
-<!-- ─── LOADER (full-screen intro animation) ─────────────────── -->
+<!-- ─── LOADER ───────────────────────────────────────────────── -->
 <div id="loader">
   <div class="loader-wordmark gradient-text">EDUMOE</div>
   <div class="loader-progress"><div class="loader-bar"></div></div>
@@ -61,24 +42,21 @@
   <div class="lg-tint"></div>
   <div class="lg-shine"></div>
 
-  <!-- Logo -->
-  <a class="nav-logo" href="index.html" style="text-decoration: none; display: flex; align-items: center; gap: 8px;">
-    <span class="nav-logo-mark" style="font-size: 24px; font-weight: 900; background: linear-gradient(135deg, var(--accent), var(--glow)); -webkit-background-clip: text; -webkit-text-fill-color: transparent; background-clip: text;">◆</span>
-    <span class="nav-logo-name" style="font-size: 18px; font-weight: 800; color: var(--txt1);">EDUMOE</span>
+  <a class="nav-logo" href="#home" onclick="goPage('home'); return false;">
+    <span class="nav-logo-mark">◆</span>
+    <span class="nav-logo-name">EDUMOE</span>
   </a>
 
-  <!-- Main nav links -->
   <div class="nav-links">
-    <a class="nav-btn-link active" href="index.html" style="text-decoration: none;">Home</a>
-    <a class="nav-btn-link" href="courses.html" style="text-decoration: none;">Courses</a>
-    <a class="nav-btn-link" href="quiz.html" style="text-decoration: none;">Quiz</a>
-    <a class="nav-btn-link" href="simulators.html" style="text-decoration: none;">Simulators</a>
-    <a class="nav-btn-link" href="moeai.html" style="text-decoration: none;">MoeAI</a>
+    <a class="nav-btn-link active" href="#home" onclick="goPage('home'); return false;">Home</a>
+    <a class="nav-btn-link" href="#courses" onclick="goPage('courses'); return false;">Courses</a>
+    <a class="nav-btn-link" href="#simulators" onclick="goPage('simulators'); return false;">Simulators</a>
+    <a class="nav-btn-link" href="#quiz" onclick="goPage('quiz'); return false;">Quiz</a>
+    <a class="nav-btn-link" href="#flashcards" onclick="goPage('flashcards'); return false;">Flashcards</a>
+    <a class="nav-btn-link" href="#moeai" onclick="goPage('moeai'); return false;">MoeAI</a>
   </div>
 
-  <!-- Right side: theme switcher + auth buttons -->
   <div class="nav-right">
-    <!-- Theme Switcher (6 dots: ruby, lava, space, oxford, light, emerald) -->
     <div class="theme-switcher" title="Switch theme">
       <div class="theme-dot td-ruby active" onclick="setTheme('ruby', this)" style="cursor: pointer;"></div>
       <div class="theme-dot td-lava" onclick="setTheme('lava', this)" style="cursor: pointer;"></div>
@@ -88,7 +66,6 @@
       <div class="theme-dot td-emerald" onclick="setTheme('emerald', this)" style="cursor: pointer;"></div>
     </div>
 
-    <!-- Auth buttons -->
     <div id="auth-container">
       <button class="nav-auth-btn" onclick="document.getElementById('loginModal').style.display='flex'" style="cursor: pointer;">Login</button>
       <button class="nav-cta" onclick="document.getElementById('signupModal').style.display='flex'" style="cursor: pointer;">Sign Up</button>
@@ -101,218 +78,292 @@
 </nav>
 
 <!-- ═══════════════════════════════════════════════════════════
-     PAGE: HOME
+     HOME PAGE
      ═══════════════════════════════════════════════════════════ -->
-<div style="min-height: 100vh; padding-top: 80px;">
-  
-  <!-- Hero Section -->
-  <div class="hero">
+<div class="page active" id="page-home">
+  <section class="hero">
     <div class="wrap">
-      <div class="hero-left sr sr-delay-1">
-        <p class="sf-caption" style="text-transform: uppercase; letter-spacing: 0.1em; margin-bottom: 12px;">CS Education Revolutionized</p>
-        <h1 class="sf-display" style="line-height: 1.1; margin: 24px 0; word-spacing: 100vw;">
-          <span class="gradient-text" style="display: inline-block;">Learn</span>
-          <span>CS like a</span>
-          <span class="gradient-text" style="display: inline-block;">Pro</span>
-        </h1>
-        <p class="sf-body" style="max-width: 420px; margin-bottom: 32px;">Interactive simulators. AI tutoring. Real-world CS concepts. Master your curriculum at your pace.</p>
+      <div class="hero-content sr">
+        <h1 class="sf-display gradient-text">Master CS, Your Way</h1>
+        <p class="sf-body" style="margin: 16px 0 32px; max-width: 500px;">Learn with interactive simulators, real-time feedback, and an AI tutor trained on the FUE curriculum.</p>
+        
         <div style="display: flex; gap: 12px; flex-wrap: wrap;">
-          <a href="courses.html" class="nav-cta" style="text-decoration: none; display: inline-flex; align-items: center; justify-content: center;">Explore Courses →</a>
-          <a href="simulators.html" class="nav-auth-btn" style="text-decoration: none; display: inline-flex; align-items: center; justify-content: center;">Try Simulators →</a>
-        </div>
-      </div>
-
-      <!-- Hero Right: 8 Floating Windows Constellation + Center Profile -->
-      <div class="hero-right sr sr-delay-2" style="position: relative; width: 500px; height: 500px; display: flex; align-items: center; justify-content: center; margin-top: 40px;">
-        
-        <!-- Center Profile Picture Orb -->
-        <div class="hero-center-orb" style="position: absolute; width: 150px; height: 150px; border-radius: 50%; background: radial-gradient(circle at 30% 30%, rgba(255,255,255,0.3), rgba(0,0,0,0.3)); overflow: hidden; z-index: 10; box-shadow: 0 8px 32px rgba(0,0,0,0.3); border: 2px solid rgba(255,255,255,0.2);">
-          <img id="moepfp-img" src="moepfp.jpg" alt="Moemen" style="width: 100%; height: 100%; object-fit: cover; display: none;">
-          <div id="moepfp-fallback" style="width: 100%; height: 100%; display: flex; align-items: center; justify-content: center; background: linear-gradient(135deg, var(--accent), var(--glow)); font-size: 60px; font-weight: 900; color: white;">M</div>
+          <button class="nav-cta" onclick="goPage('simulators'); return false;" style="cursor: pointer;">Start Learning →</button>
+          <a href="https://t.me/CS_Epic_Save" target="_blank" class="nav-auth-btn" style="text-decoration: none; display: inline-flex; align-items: center; gap: 8px;">Join Community</a>
         </div>
 
-        <!-- ─── INNER LAYER (4 windows) ─── -->
-        
-        <!-- Window 1: ODE Math Solver (Top-Left Inner) -->
-        <div class="float-window float-inner" style="top: 0; left: 0; animation-delay: 0s;">
-          <div class="float-title" style="font-size: 11px; color: var(--txt3); text-transform: uppercase; letter-spacing: 0.05em; margin-bottom: 6px;">ODE Solver</div>
-          <div class="float-content" style="font-size: 12px; font-family: 'Courier New', monospace; line-height: 1.4; color: var(--accent);">
-            <div>dy/dx + 2y = e^x</div>
-            <div style="color: var(--txt3); margin-top: 4px; font-size: 10px;">→ y = (e^x/3) + Ce^(-2x)</div>
+        <div style="margin-top: 48px; display: grid; grid-template-columns: repeat(auto-fit, minmax(120px, 1fr)); gap: 16px; max-width: 500px;">
+          <div class="lg lg-panel" style="padding: 16px; text-align: center;">
+            <div class="lg-effect"></div><div class="lg-tint"></div><div class="lg-shine"></div>
+            <div style="position: relative; z-index: 3; font-size: 28px; font-weight: 800; color: var(--accent);">230+</div>
+            <div style="position: relative; z-index: 3; font-size: 12px; color: var(--txt3);">Students</div>
+          </div>
+          <div class="lg lg-panel" style="padding: 16px; text-align: center;">
+            <div class="lg-effect"></div><div class="lg-tint"></div><div class="lg-shine"></div>
+            <div style="position: relative; z-index: 3; font-size: 28px; font-weight: 800; color: var(--glow);">8</div>
+            <div style="position: relative; z-index: 3; font-size: 12px; color: var(--txt3);">Simulators</div>
+          </div>
+          <div class="lg lg-panel" style="padding: 16px; text-align: center;">
+            <div class="lg-effect"></div><div class="lg-tint"></div><div class="lg-shine"></div>
+            <div style="position: relative; z-index: 3; font-size: 28px; font-weight: 800; color: var(--success);">100%</div>
+            <div style="position: relative; z-index: 3; font-size: 12px; color: var(--txt3);">Free</div>
           </div>
         </div>
-
-        <!-- Window 2: C++ Snippet (Top-Right Inner) -->
-        <div class="float-window float-inner" style="top: 0; right: 0; animation-delay: 0.1s;">
-          <div class="float-title" style="font-size: 11px; color: var(--txt3); text-transform: uppercase; letter-spacing: 0.05em; margin-bottom: 6px;">C++ Code</div>
-          <div class="float-content" style="font-size: 11px; font-family: 'Courier New', monospace; line-height: 1.3; color: #4ade80;">
-            <div style="color: #a78bfa;">for</div><div style="display: inline-color: var(--txt1);">(int i=0; i&lt;n; i++)</div>
-            <div style="margin-top: 2px;">arr[i] = i*2;</div>
-          </div>
-        </div>
-
-        <!-- Window 3: Normal Distribution (Bottom-Right Inner) -->
-        <div class="float-window float-inner" style="bottom: 0; right: 0; animation-delay: 0.2s;">
-          <div class="float-title" style="font-size: 11px; color: var(--txt3); text-transform: uppercase; letter-spacing: 0.05em; margin-bottom: 6px;">Normal Dist</div>
-          <div class="float-content" style="font-size: 10px; color: var(--txt2);">
-            <div style="margin: 2px 0;">μ = 0, σ = 1</div>
-            <div style="margin: 2px 0; color: var(--accent);">68% within ±σ</div>
-          </div>
-        </div>
-
-        <!-- Window 4: Logic Circuit (Bottom-Left Inner) -->
-        <div class="float-window float-inner" style="bottom: 0; left: 0; animation-delay: 0.3s;">
-          <div class="float-title" style="font-size: 11px; color: var(--txt3); text-transform: uppercase; letter-spacing: 0.05em; margin-bottom: 6px;">Logic Gate</div>
-          <div class="float-content" style="font-size: 10px; color: var(--txt2);">
-            <div style="margin: 2px 0;">A ∧ B</div>
-            <div style="margin: 2px 0; color: #fbbf24;">→ AND</div>
-          </div>
-        </div>
-
-        <!-- ─── OUTER LAYER (4 smaller windows) ─── -->
-
-        <!-- Window 5: Calculus Mini (Top-Left Outer) -->
-        <div class="float-window float-outer" style="top: -40px; left: -60px; animation-delay: 0.4s;">
-          <div class="float-title" style="font-size: 10px; color: var(--txt3); text-transform: uppercase; letter-spacing: 0.05em; margin-bottom: 4px;">Calculus</div>
-          <div class="float-content" style="font-size: 10px; font-family: 'Courier New', monospace; color: var(--accent); line-height: 1.2;">
-            <div>d/dx(x²)</div>
-            <div style="color: var(--txt3); font-size: 9px;">= 2x</div>
-          </div>
-        </div>
-
-        <!-- Window 6: Circuit Physics (Top-Right Outer) -->
-        <div class="float-window float-outer" style="top: -40px; right: -60px; animation-delay: 0.5s;">
-          <div class="float-title" style="font-size: 10px; color: var(--txt3); text-transform: uppercase; letter-spacing: 0.05em; margin-bottom: 4px;">Physics</div>
-          <div class="float-content" style="font-size: 10px; font-family: 'Courier New', monospace; color: var(--accent); line-height: 1.2;">
-            <div>V = IR</div>
-            <div style="color: var(--txt3); font-size: 9px;">Ohm's Law</div>
-          </div>
-        </div>
-
-        <!-- Window 7: Discrete Maths (Bottom-Left Outer) -->
-        <div class="float-window float-outer" style="bottom: -40px; left: -60px; animation-delay: 0.6s;">
-          <div class="float-title" style="font-size: 10px; color: var(--txt3); text-transform: uppercase; letter-spacing: 0.05em; margin-bottom: 4px;">Discrete</div>
-          <div class="float-content" style="font-size: 10px; color: var(--accent); line-height: 1.2;">
-            <div>{1,2,3} ∪ {2,3,4}</div>
-            <div style="color: var(--txt3); font-size: 9px;">= {1,2,3,4}</div>
-          </div>
-        </div>
-
-        <!-- Window 8: Computing Fund (Bottom-Right Outer) -->
-        <div class="float-window float-outer" style="bottom: -40px; right: -60px; animation-delay: 0.7s;">
-          <div class="float-title" style="font-size: 10px; color: var(--txt3); text-transform: uppercase; letter-spacing: 0.05em; margin-bottom: 4px;">Fundamentals</div>
-          <div class="float-content" style="font-size: 10px; font-family: 'Courier New', monospace; color: #4ade80; line-height: 1.2;">
-            <div>int arr[5];</div>
-            <div style="color: var(--txt3); font-size: 9px;">Arrays</div>
-          </div>
-        </div>
-
       </div>
     </div>
-  </div><!-- end .hero -->
+  </section>
 
-  <!-- Why EduMoe Features -->
-  <div class="wrap section" style="padding-top: 60px;">
-    <div class="section-head">
-      <div class="section-label">
-        <div class="section-label-dot"></div>
-        FEATURES
+  <section class="section">
+    <div class="wrap">
+      <h2 class="sf-title" style="text-align: center; margin-bottom: 60px;">Why EDUMOE?</h2>
+      <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(280px, 1fr)); gap: 24px;">
+        <div class="feature-card lg lg-panel sr sr-delay-1">
+          <div class="lg-effect"></div><div class="lg-tint"></div><div class="lg-shine"></div>
+          <div style="position: relative; z-index: 3; font-size: 40px; margin-bottom: 16px;">💻</div>
+          <h3 class="sf-headline" style="margin-bottom: 12px;">C++ Compiler</h3>
+          <p class="sf-body">Write, run, and debug C++ code instantly.</p>
+        </div>
+
+        <div class="feature-card lg lg-panel sr sr-delay-2">
+          <div class="lg-effect"></div><div class="lg-tint"></div><div class="lg-shine"></div>
+          <div style="position: relative; z-index: 3; font-size: 40px; margin-bottom: 16px;">📊</div>
+          <h3 class="sf-headline" style="margin-bottom: 12px;">Probability Visualizer</h3>
+          <p class="sf-body">Master distributions and statistics concepts.</p>
+        </div>
+
+        <div class="feature-card lg lg-panel sr sr-delay-3">
+          <div class="lg-effect"></div><div class="lg-tint"></div><div class="lg-shine"></div>
+          <div style="position: relative; z-index: 3; font-size: 40px; margin-bottom: 16px;">⚡</div>
+          <h3 class="sf-headline" style="margin-bottom: 12px;">Logic Circuits</h3>
+          <p class="sf-body">Design and test digital circuits in real-time.</p>
+        </div>
+
+        <div class="feature-card lg lg-panel sr sr-delay-4">
+          <div class="lg-effect"></div><div class="lg-tint"></div><div class="lg-shine"></div>
+          <div style="position: relative; z-index: 3; font-size: 40px; margin-bottom: 16px;">🤖</div>
+          <h3 class="sf-headline" style="margin-bottom: 12px;">MoeAI Tutor</h3>
+          <p class="sf-body">Get AI help trained on your curriculum.</p>
+        </div>
+
+        <div class="feature-card lg lg-panel sr sr-delay-5">
+          <div class="lg-effect"></div><div class="lg-tint"></div><div class="lg-shine"></div>
+          <div style="position: relative; z-index: 3; font-size: 40px; margin-bottom: 16px;">🎴</div>
+          <h3 class="sf-headline" style="margin-bottom: 12px;">Flashcards</h3>
+          <p class="sf-body">Build muscle memory with spaced repetition.</p>
+        </div>
+
+        <div class="feature-card lg lg-panel sr sr-delay-6">
+          <div class="lg-effect"></div><div class="lg-tint"></div><div class="lg-shine"></div>
+          <div style="position: relative; z-index: 3; font-size: 40px; margin-bottom: 16px;">💬</div>
+          <h3 class="sf-headline" style="margin-bottom: 12px;">Community</h3>
+          <p class="sf-body">Learn with 230+ FUE students on Telegram.</p>
+        </div>
       </div>
-      <h2 class="sf-title">Why Choose EduMoe?</h2>
-      <p>Everything you need to master CS concepts, built by students, for students.</p>
     </div>
-
-    <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(240px, 1fr)); gap: 24px; margin-top: 48px;">
-      <div class="feature-card lg lg-panel" style="padding: 24px; text-align: center;">
-        <div style="font-size: 32px; margin-bottom: 12px;">💻</div>
-        <h3 class="sf-headline">Interactive Compiler</h3>
-        <p class="sf-body" style="margin-top: 8px;">Code, compile, run C++ directly in your browser.</p>
-      </div>
-      <div class="feature-card lg lg-panel" style="padding: 24px; text-align: center;">
-        <div style="font-size: 32px; margin-bottom: 12px;">⚡</div>
-        <h3 class="sf-headline">Logic Circuits</h3>
-        <p class="sf-body" style="margin-top: 8px;">Build and test digital circuits in Logisim.</p>
-      </div>
-      <div class="feature-card lg lg-panel" style="padding: 24px; text-align: center;">
-        <div style="font-size: 32px; margin-bottom: 12px;">📊</div>
-        <h3 class="sf-headline">Math Solvers</h3>
-        <p class="sf-body" style="margin-top: 8px;">Derivatives, integrals, ODEs, probability — visualized.</p>
-      </div>
-      <div class="feature-card lg lg-panel" style="padding: 24px; text-align: center;">
-        <div style="font-size: 32px; margin-bottom: 12px;">🤖</div>
-        <h3 class="sf-headline">MoeAI Tutor</h3>
-        <p class="sf-body" style="margin-top: 8px;">AI-powered tutoring tailored to FUE CS curriculum.</p>
-      </div>
-      <div class="feature-card lg lg-panel" style="padding: 24px; text-align: center;">
-        <div style="font-size: 32px; margin-bottom: 12px;">🎓</div>
-        <h3 class="sf-headline">Flashcards</h3>
-        <p class="sf-body" style="margin-top: 8px;">Study efficiently with spaced repetition.</p>
-      </div>
-      <div class="feature-card lg lg-panel" style="padding: 24px; text-align: center;">
-        <div style="font-size: 32px; margin-bottom: 12px;">💬</div>
-        <h3 class="sf-headline">Community</h3>
-        <p class="sf-body" style="margin-top: 8px;">Join 230+ FUE CS students on Telegram.</p>
-      </div>
-    </div>
-  </div>
-
-  <!-- CTA Section -->
-  <div class="wrap section" style="text-align: center; padding-top: 60px;">
-    <h2 class="sf-title">Ready to Level Up?</h2>
-    <p class="sf-body" style="max-width: 400px; margin: 16px auto 32px;">Start with our simulators, join our community, or chat with MoeAI.</p>
-    <div style="display: flex; gap: 12px; justify-content: center; flex-wrap: wrap;">
-      <a href="simulators.html" class="nav-cta" style="text-decoration: none; display: inline-flex; align-items: center; justify-content: center;">Open Simulators</a>
-      <a href="https://t.me/CS_Epic_Save" class="nav-auth-btn" target="_blank" style="text-decoration: none; display: inline-flex; align-items: center; justify-content: center;">Join Telegram</a>
-    </div>
-  </div>
-
-</div><!-- end main page -->
+  </section>
+</div>
 
 <!-- ═══════════════════════════════════════════════════════════
-     FOOTER
+     COURSES PAGE
      ═══════════════════════════════════════════════════════════ -->
-<footer class="footer" style="border-top: 1px solid var(--tint1); margin-top: 80px; padding: 48px 0; background: rgba(0,0,0,0.2);">
-  <div class="wrap">
-    <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 32px; margin-bottom: 48px;">
-      <div>
-        <h4 class="sf-label" style="margin-bottom: 12px;">Platform</h4>
-        <ul style="list-style: none; padding: 0; margin: 0;">
-          <li><a href="index.html" style="color: var(--txt2); text-decoration: none; font-size: 14px;">Home</a></li>
-          <li><a href="courses.html" style="color: var(--txt2); text-decoration: none; font-size: 14px;">Courses</a></li>
-          <li><a href="simulators.html" style="color: var(--txt2); text-decoration: none; font-size: 14px;">Simulators</a></li>
-          <li><a href="quiz.html" style="color: var(--txt2); text-decoration: none; font-size: 14px;">Quiz</a></li>
-        </ul>
-      </div>
-      <div>
-        <h4 class="sf-label" style="margin-bottom: 12px;">Community</h4>
-        <ul style="list-style: none; padding: 0; margin: 0;">
-          <li><a href="https://t.me/CS_Epic_Save" target="_blank" style="color: var(--txt2); text-decoration: none; font-size: 14px;">Telegram</a></li>
-          <li><a href="https://github.com/moemen" target="_blank" style="color: var(--txt2); text-decoration: none; font-size: 14px;">GitHub</a></li>
-          <li><a href="moeai.html" style="color: var(--txt2); text-decoration: none; font-size: 14px;">MoeAI</a></li>
-        </ul>
-      </div>
-      <div>
-        <h4 class="sf-label" style="margin-bottom: 12px;">About</h4>
-        <ul style="list-style: none; padding: 0; margin: 0;">
-          <li><a href="#" onclick="alert('Built by CS students for CS students'); return false;" style="color: var(--txt2); text-decoration: none; font-size: 14px;">About Us</a></li>
-          <li><a href="#" onclick="alert('All content free & open'); return false;" style="color: var(--txt2); text-decoration: none; font-size: 14px;">License</a></li>
-        </ul>
+<div class="page" id="page-courses">
+  <section class="section">
+    <div class="wrap">
+      <h2 class="sf-title" style="text-align: center; margin-bottom: 60px;">Our Courses</h2>
+      <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(280px, 1fr)); gap: 24px;">
+        <div class="lg lg-panel" style="padding: 24px;">
+          <div class="lg-effect"></div><div class="lg-tint"></div><div class="lg-shine"></div>
+          <div style="position: relative; z-index: 3;">
+            <h3 class="sf-headline">Structured Programming</h3>
+            <p class="sf-body" style="margin: 12px 0;">Master C++ with hands-on projects.</p>
+            <div style="background: rgba(255,255,255,0.05); height: 4px; border-radius: 2px; margin: 16px 0; overflow: hidden;">
+              <div style="background: var(--accent); height: 100%; width: 40%;"></div>
+            </div>
+            <p style="font-size: 12px; color: var(--txt3);">40% complete</p>
+          </div>
+        </div>
+
+        <div class="lg lg-panel" style="padding: 24px;">
+          <div class="lg-effect"></div><div class="lg-tint"></div><div class="lg-shine"></div>
+          <div style="position: relative; z-index: 3;">
+            <h3 class="sf-headline">Logic Design</h3>
+            <p class="sf-body" style="margin: 12px 0;">Build digital circuits from gates.</p>
+            <div style="background: rgba(255,255,255,0.05); height: 4px; border-radius: 2px; margin: 16px 0; overflow: hidden;">
+              <div style="background: var(--accent); height: 100%; width: 25%;"></div>
+            </div>
+            <p style="font-size: 12px; color: var(--txt3);">25% complete</p>
+          </div>
+        </div>
+
+        <div class="lg lg-panel" style="padding: 24px;">
+          <div class="lg-effect"></div><div class="lg-tint"></div><div class="lg-shine"></div>
+          <div style="position: relative; z-index: 3;">
+            <h3 class="sf-headline">Differential Equations</h3>
+            <p class="sf-body" style="margin: 12px 0;">Solve and visualize ODEs.</p>
+            <div style="background: rgba(255,255,255,0.05); height: 4px; border-radius: 2px; margin: 16px 0; overflow: hidden;">
+              <div style="background: var(--accent); height: 100%; width: 20%;"></div>
+            </div>
+            <p style="font-size: 12px; color: var(--txt3);">20% complete</p>
+          </div>
+        </div>
+
+        <div class="lg lg-panel" style="padding: 24px;">
+          <div class="lg-effect"></div><div class="lg-tint"></div><div class="lg-shine"></div>
+          <div style="position: relative; z-index: 3;">
+            <h3 class="sf-headline">Probability & Stats</h3>
+            <p class="sf-body" style="margin: 12px 0;">Master distributions and statistics.</p>
+            <div style="background: rgba(255,255,255,0.05); height: 4px; border-radius: 2px; margin: 16px 0; overflow: hidden;">
+              <div style="background: var(--accent); height: 100%; width: 15%;"></div>
+            </div>
+            <p style="font-size: 12px; color: var(--txt3);">15% complete</p>
+          </div>
+        </div>
       </div>
     </div>
+  </section>
+</div>
 
+<!-- ═══════════════════════════════════════════════════════════
+     SIMULATORS PAGE
+     ═══════════════════════════════════════════════════════════ -->
+<div class="page" id="page-simulators">
+  <section class="section">
+    <div class="wrap">
+      <h2 class="sf-title" style="text-align: center; margin-bottom: 60px;">Interactive Simulators</h2>
+      <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(140px, 1fr)); gap: 16px;">
+        <div class="lg lg-panel" style="padding: 20px; text-align: center; cursor: pointer;">
+          <div class="lg-effect"></div><div class="lg-tint"></div><div class="lg-shine"></div>
+          <div style="position: relative; z-index: 3; font-size: 32px; margin-bottom: 8px;">💻</div>
+          <h4 class="sf-headline">C++ Compiler</h4>
+        </div>
+        <div class="lg lg-panel" style="padding: 20px; text-align: center; cursor: pointer;">
+          <div class="lg-effect"></div><div class="lg-tint"></div><div class="lg-shine"></div>
+          <div style="position: relative; z-index: 3; font-size: 32px; margin-bottom: 8px;">⚡</div>
+          <h4 class="sf-headline">Logic Gates</h4>
+        </div>
+        <div class="lg lg-panel" style="padding: 20px; text-align: center; cursor: pointer;">
+          <div class="lg-effect"></div><div class="lg-tint"></div><div class="lg-shine"></div>
+          <div style="position: relative; z-index: 3; font-size: 32px; margin-bottom: 8px;">📊</div>
+          <h4 class="sf-headline">Probability</h4>
+        </div>
+        <div class="lg lg-panel" style="padding: 20px; text-align: center; cursor: pointer;">
+          <div class="lg-effect"></div><div class="lg-tint"></div><div class="lg-shine"></div>
+          <div style="position: relative; z-index: 3; font-size: 32px; margin-bottom: 8px;">📈</div>
+          <h4 class="sf-headline">ODE Solver</h4>
+        </div>
+        <div class="lg lg-panel" style="padding: 20px; text-align: center; cursor: pointer;">
+          <div class="lg-effect"></div><div class="lg-tint"></div><div class="lg-shine"></div>
+          <div style="position: relative; z-index: 3; font-size: 32px; margin-bottom: 8px;">∫</div>
+          <h4 class="sf-headline">Calculus</h4>
+        </div>
+        <div class="lg lg-panel" style="padding: 20px; text-align: center; cursor: pointer;">
+          <div class="lg-effect"></div><div class="lg-tint"></div><div class="lg-shine"></div>
+          <div style="position: relative; z-index: 3; font-size: 32px; margin-bottom: 8px;">⚛️</div>
+          <h4 class="sf-headline">Circuit Physics</h4>
+        </div>
+        <div class="lg lg-panel" style="padding: 20px; text-align: center; cursor: pointer;">
+          <div class="lg-effect"></div><div class="lg-tint"></div><div class="lg-shine"></div>
+          <div style="position: relative; z-index: 3; font-size: 32px; margin-bottom: 8px;">∪</div>
+          <h4 class="sf-headline">Discrete Math</h4>
+        </div>
+        <div class="lg lg-panel" style="padding: 20px; text-align: center; cursor: pointer;">
+          <div class="lg-effect"></div><div class="lg-tint"></div><div class="lg-shine"></div>
+          <div style="position: relative; z-index: 3; font-size: 32px; margin-bottom: 8px;">🔗</div>
+          <h4 class="sf-headline">Data Structures</h4>
+        </div>
+      </div>
+    </div>
+  </section>
+</div>
+
+<!-- ═══════════════════════════════════════════════════════════
+     QUIZ PAGE
+     ═══════════════════════════════════════════════════════════ -->
+<div class="page" id="page-quiz">
+  <section class="section">
+    <div class="wrap">
+      <h2 class="sf-title" style="text-align: center; margin-bottom: 40px;">Daily Quiz</h2>
+      <div class="lg lg-panel" style="padding: 32px; max-width: 600px; margin: 0 auto; border-radius: 20px;">
+        <div class="lg-effect"></div><div class="lg-tint"></div><div class="lg-shine"></div>
+        <div style="position: relative; z-index: 3; text-align: center;">
+          <p class="sf-body">Quiz system coming soon. Test your knowledge with MCQs.</p>
+        </div>
+      </div>
+    </div>
+  </section>
+</div>
+
+<!-- ═══════════════════════════════════════════════════════════
+     FLASHCARDS PAGE
+     ═══════════════════════════════════════════════════════════ -->
+<div class="page" id="page-flashcards">
+  <section class="section">
+    <div class="wrap">
+      <h2 class="sf-title" style="text-align: center; margin-bottom: 40px;">Flashcards</h2>
+      <div class="lg lg-panel" style="padding: 32px; max-width: 600px; margin: 0 auto; border-radius: 20px;">
+        <div class="lg-effect"></div><div class="lg-tint"></div><div class="lg-shine"></div>
+        <div style="position: relative; z-index: 3; text-align: center;">
+          <p class="sf-body">Create and review flashcards for spaced learning.</p>
+        </div>
+      </div>
+    </div>
+  </section>
+</div>
+
+<!-- ═══════════════════════════════════════════════════════════
+     MOEAI PAGE
+     ═══════════════════════════════════════════════════════════ -->
+<div class="page" id="page-moeai">
+  <section class="section">
+    <div class="wrap">
+      <h2 class="sf-title" style="text-align: center; margin-bottom: 40px;">🤖 MoeAI</h2>
+      <div class="lg lg-panel" style="padding: 48px; max-width: 600px; margin: 0 auto; text-align: center; border-radius: 20px;">
+        <div class="lg-effect"></div><div class="lg-tint"></div><div class="lg-shine"></div>
+        <div style="position: relative; z-index: 3;">
+          <h3 class="sf-headline">Your Personal CS Tutor</h3>
+          <p class="sf-body" style="margin: 16px 0;">Trained on 3,150 pages of the FUE CS curriculum. Multi-agent reasoning with ARIA, NOVA, SENTINEL, JARVIS.</p>
+          <a href="https://t.me/MoeSuperBot" target="_blank" class="nav-cta" style="text-decoration: none; display: inline-block; padding: 12px 24px; margin-top: 12px;">Chat on Telegram →</a>
+        </div>
+      </div>
+    </div>
+  </section>
+</div>
+
+<!-- Footer -->
+<footer class="footer">
+  <div class="wrap">
+    <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(150px, 1fr)); gap: 32px; margin-bottom: 40px;">
+      <div>
+        <h4 class="sf-headline" style="margin-bottom: 12px;">Product</h4>
+        <a href="#home" onclick="goPage('home'); return false;" style="display: block; color: var(--txt2); text-decoration: none; margin-bottom: 8px; font-size: 14px;">Home</a>
+        <a href="#courses" onclick="goPage('courses'); return false;" style="display: block; color: var(--txt2); text-decoration: none; margin-bottom: 8px; font-size: 14px;">Courses</a>
+        <a href="#simulators" onclick="goPage('simulators'); return false;" style="display: block; color: var(--txt2); text-decoration: none; font-size: 14px;">Simulators</a>
+      </div>
+      <div>
+        <h4 class="sf-headline" style="margin-bottom: 12px;">Learn</h4>
+        <a href="#quiz" onclick="goPage('quiz'); return false;" style="display: block; color: var(--txt2); text-decoration: none; margin-bottom: 8px; font-size: 14px;">Quiz</a>
+        <a href="#flashcards" onclick="goPage('flashcards'); return false;" style="display: block; color: var(--txt2); text-decoration: none; margin-bottom: 8px; font-size: 14px;">Flashcards</a>
+        <a href="#moeai" onclick="goPage('moeai'); return false;" style="display: block; color: var(--txt2); text-decoration: none; font-size: 14px;">MoeAI</a>
+      </div>
+      <div>
+        <h4 class="sf-headline" style="margin-bottom: 12px;">Community</h4>
+        <a href="https://t.me/CS_Epic_Save" target="_blank" style="display: block; color: var(--txt2); text-decoration: none; margin-bottom: 8px; font-size: 14px;">Telegram</a>
+        <a href="https://github.com" target="_blank" style="display: block; color: var(--txt2); text-decoration: none; font-size: 14px;">GitHub</a>
+      </div>
+    </div>
     <div style="border-top: 1px solid var(--tint1); padding-top: 24px; text-align: center;">
       <p class="sf-caption">© <span id="footer-year"></span> EDUMOE. Built with ❤️ for FUE CS students.</p>
     </div>
   </div>
 </footer>
 
-<!-- ─── TOAST NOTIFICATION ───────────────────────────────────── -->
+<!-- Toast -->
 <div class="toast lg" id="toast" style="position: fixed; bottom: 20px; right: 20px; padding: 12px 20px; border-radius: 8px; z-index: 9999; opacity: 0; transition: opacity 0.3s;">
   <div class="lg-effect"></div><div class="lg-tint"></div><div class="lg-shine"></div>
   <span id="toast-msg" style="position: relative; z-index: 3;"></span>
 </div>
 
-<!-- ─── MODAL: LOGIN ─────────────────────────────────────────── -->
+<!-- Login Modal -->
 <div class="modal-overlay" id="loginModal" style="display: none;">
   <div class="modal-box lg lg-panel" style="width: 100%; max-width: 400px; padding: 32px; border-radius: 22px;">
     <div class="lg-effect"></div><div class="lg-tint"></div><div class="lg-shine"></div>
@@ -324,7 +375,7 @@
   </div>
 </div>
 
-<!-- ─── MODAL: SIGN UP ───────────────────────────────────────── -->
+<!-- Signup Modal -->
 <div class="modal-overlay" id="signupModal" style="display: none;">
   <div class="modal-box lg lg-panel" style="width: 100%; max-width: 400px; padding: 32px; border-radius: 22px;">
     <div class="lg-effect"></div><div class="lg-tint"></div><div class="lg-shine"></div>
@@ -337,26 +388,7 @@
   </div>
 </div>
 
-<!-- ─── SCRIPTS ──────────────────────────────────────────────── -->
 <script src="app.js"></script>
-<script src="three-background.js"></script>
-<script>
-  // Profile picture loader
-  document.addEventListener('DOMContentLoaded', () => {
-    const img = document.getElementById('moepfp-img');
-    const fallback = document.getElementById('moepfp-fallback');
-    img.onerror = () => { img.style.display = 'none'; fallback.style.display = 'flex'; };
-    img.onload = () => { img.style.display = 'block'; fallback.style.display = 'none'; };
-    img.src = 'moepfp.jpg'; // Try .jpg first
-    setTimeout(() => {
-      if (img.style.display === 'none') {
-        img.src = 'moepfp.png'; // Try .png if .jpg fails
-      }
-    }, 500);
-  });
 
-  // Footer year
-  document.getElementById('footer-year').textContent = new Date().getFullYear();
-</script>
 </body>
 </html>
