@@ -65,6 +65,44 @@ function setTheme(themeName, dotEl) {
   });
 })();
 
+/* ── NAVIGATION: SINGLE-PAGE HASH ROUTING ───────────────────── */
+function goPage(pageId) {
+  // Hide all pages
+  document.querySelectorAll('.page').forEach(p => p.classList.remove('active'));
+  
+  // Show target page
+  const page = document.getElementById('page-' + pageId);
+  if (page) {
+    page.classList.add('active');
+  }
+  
+  // Update navbar active state
+  document.querySelectorAll('.nav-btn-link').forEach(link => {
+    link.classList.remove('active');
+    if (link.href && link.href.includes('#' + pageId)) {
+      link.classList.add('active');
+    }
+  });
+  
+  // Scroll to top
+  window.scrollTo(0, 0);
+  
+  // Update URL hash
+  window.location.hash = pageId;
+}
+
+// Handle hash on page load
+window.addEventListener('hashchange', () => {
+  const pageId = window.location.hash.slice(1) || 'home';
+  goPage(pageId);
+});
+
+// Initialize with current hash or default to home
+document.addEventListener('DOMContentLoaded', () => {
+  const initialPage = window.location.hash.slice(1) || 'home';
+  goPage(initialPage);
+});
+
 /* ── 4. SCROLL REVEAL ───────────────────────────────────────────── */
 function initScrollReveal() {
   const reveals = document.querySelectorAll('.sr');
